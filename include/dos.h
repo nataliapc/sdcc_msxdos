@@ -320,9 +320,14 @@ char get_env(char* name, char* buffer, char buffer_size);
 void set_transfer_address(uint8_t *memaddress);
 char read_abs_sector(uint8_t drv, uint16_t startsec, uint8_t nsec);
 char write_abs_sector(uint8_t drv, uint16_t startsec, uint8_t nsec);
-char read_abs_sector_drv(uint8_t drv, uint32_t startsec, uint8_t nsec);		//Nextor Only
-char write_abs_sector_drv(uint8_t drv, uint32_t startsec, uint8_t nsec);	//Nextor Only
 
+// Nextor Only
+char get_drive_letter_info(char drive, DRIVE_info *info);
+char get_FAT_cluster_info(char drive, uint16_t clusterNumber, CLUSTER_info *info) __naked;
+char read_abs_sector_drv(uint8_t drv, uint32_t startsec, uint8_t nsec);
+char write_abs_sector_drv(uint8_t drv, uint32_t startsec, uint8_t nsec);
+
+// Memory mapper
 void initializeMapper();
 void setMapperPage2(uint8_t page);
 void restoreMapperPage2();
