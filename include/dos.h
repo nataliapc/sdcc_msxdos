@@ -70,6 +70,7 @@
 
 #define GENV    0x6B		// Get environment item			         NEW
 #define DOSVER  0x6F		// Get MSX-DOS version			         NEW
+
 // Nextor
 // https://github.com/Konamiman/Nextor/blob/v2.1/docs/Nextor%202.1%20Programmers%20Reference.md#3-new-function-calls
 #define FOUT    0x71		// Turn On/Off the fast STROUT mode. When enabled, the _STROUT and _ZSTROUT functions will work faster.
@@ -119,6 +120,11 @@
 #define ATTR_ARCHIVE   32		// Is set when a file was written to and closed. This bit can be examined by, for example, the XCOPY command to determine whether the file has been changed.
 #define ATTR_RESERVED  64		// Reserved (always 0).
 #define ATTR_DEVICE    128		// This is set to indicate that the FIB refers to a character device (eg. "CON") rather than a disk file. All of the other attributes bits are ignored.
+
+/* DPARM.fsType filesystem types */
+#define FS_FAT12		0x00
+#define FS_FAT16		0x01
+#define FS_UNKNOWN		0xff
 
 /* GDLI Drive Status values */
 #define DRVSTAT_UNASSIGNED   0
@@ -306,7 +312,7 @@ uint16_t fread(char* buf, uint16_t size, char fp);
 uint16_t fwrite(char* buf, uint16_t size, char fp);
 uint16_t fputs(char* str, char fp);
 uint16_t fgets(char* bug, uint16_t size, uint16_t fh);
-uint32_t fseek (char fp, uint32_t offset, char origin);
+uint32_t fseek (char fp, int32_t offset, char origin);
 uint32_t filesize(char *fn);
 char     fileexists(char *fn);
 
@@ -323,7 +329,7 @@ char write_abs_sector(uint8_t drv, uint16_t startsec, uint8_t nsec);
 
 // Nextor Only
 char get_drive_letter_info(char drive, DRIVE_info *info);
-char get_FAT_cluster_info(char drive, uint16_t clusterNumber, CLUSTER_info *info) __naked;
+char get_FAT_cluster_info(char drive, uint16_t clusterNumber, CLUSTER_info *info);
 char read_abs_sector_drv(uint8_t drv, uint32_t startsec, uint8_t nsec);
 char write_abs_sector_drv(uint8_t drv, uint32_t startsec, uint8_t nsec);
 

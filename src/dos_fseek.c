@@ -3,7 +3,7 @@
 
 #ifdef MSXDOS2
 
-uint32_t fseek (char fp, uint32_t offset, char origin) __naked
+uint32_t fseek (char fp, int32_t offset, char origin) __naked
 {
   fp;
   offset;
