@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #define MSX2
+#define MSXDOS2
 
 #define DOSCALL  call 5
 #define BIOSCALL ld iy,(#EXPTBL-1) \
