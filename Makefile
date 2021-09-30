@@ -21,7 +21,7 @@ CRT = $(OBJDIR)crt0msx_msxdos_advanced.s.rel
 
 #DEBUG = -DDEBUG
 CCFLAGS :=  --code-loc 0x0178 --data-loc 0 --no-std-crt0 --out-fmt-ihx --fomit-frame-pointer --opt-code-speed \
-			--disable-warning 196 --disable-warning 85 -mz80 $(DEBUG)
+			--disable-warning 196 --disable-warning 85 -mz80 $(DEBUG) $(EXTERNFLAGS)
 
 LIBS = $(LIBDIR)dos.lib
 TEST = test.com

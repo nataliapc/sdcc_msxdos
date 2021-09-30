@@ -127,6 +127,10 @@
 #define FS_FAT16		0x01
 #define FS_UNKNOWN		0xff
 
+/* FOUT set_fast_out() constants */
+#define FASTOUT_OFF   0x00
+#define FASTOUT_ON    0xff
+
 /* GDLI Drive Status values */
 #define DRVSTAT_UNASSIGNED   0
 #define DRVSTAT_ASSIGNED     1
@@ -210,7 +214,7 @@ typedef struct {
 	uint16_t dataSec;		//     DE+15..16 - First data sector number
 	uint16_t maxClus;		//     DE+17..18 - Maximum cluster number
 	uint8_t  dirtyFlag;		//     DE+19     - Dirty disk flag
-	uint16_t volId;			//     DE+20..23 - Volume id. (-1 => no volume id)
+	uint32_t volId;			//     DE+20..23 - Volume id. (-1 => no volume id)
 	uint32_t totalSec32;	//     DE+24..27 - Reserved (0h fill) | NEXTOR: Logical sectors as a 32 bit value
 	uint8_t  fsType;		//     DE+28     - Reserved (0h fill) | NEXTOR: Filesystem type (0:FAT12 1:FAT16 255:Other)
 	uint8_t  reserved[3];	//     DE+29..31 - Reserved (0h fill)
@@ -333,6 +337,10 @@ char get_drive_letter_info(char drive, DRIVE_info *info);
 char get_FAT_cluster_info(char drive, uint16_t clusterNumber, CLUSTER_info *info);
 char read_abs_sector_drv(uint8_t drv, uint32_t startsec, uint8_t nsec);
 char write_abs_sector_drv(uint8_t drv, uint32_t startsec, uint8_t nsec);
+void set_drive_lock(uint8_t drive, uint8_t value);
+char get_drive_lock(uint8_t drive);
+void set_fast_out(uint8_t value);
+char get_fast_out();
 
 // Memory mapper
 void initializeMapper();
