@@ -5,7 +5,7 @@
 
 static void _printn(unsigned u, unsigned base, char issigned);
 static uint8_t _printn_long(uint32_t u, unsigned base, char issigned);
-static void _printf(const char *format, va_list va);
+void _printf(const char *format, va_list va);
 
 /*
 	Simple cprintf implementation.
@@ -48,7 +48,7 @@ static uint8_t _printn_long(uint32_t u, unsigned base, char issigned)
 	return u*base;
 }
 
-static void _printf(const char *format, va_list va)
+void _printf(const char *format, va_list va)
 {
 	while (*format) {
 		if (*format == '%') {
