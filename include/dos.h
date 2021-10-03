@@ -67,6 +67,7 @@
 #define PARSE   0x5B		// Parse pathname				         NEW
 
 #define TERM    0x62		// Terminate with error code	         NEW
+#define DEFAB   0x63		// Define Abort exit routine	         NEW
 #define EXPLAIN 0x66		// Explain error code			         NEW
 
 #define GENV    0x6B		// Get environment item			         NEW
@@ -326,6 +327,7 @@ int  parse_pathname(char volume_name_flag, char* s);
 void exit(int code);
 void exit0();
 void explain(char* buffer, char error_code);
+void set_abort_routine(void *routine) __z88dk_fastcall;
 char get_env(char* name, char* buffer, char buffer_size);
 
 void set_transfer_address(uint8_t *memaddress);
