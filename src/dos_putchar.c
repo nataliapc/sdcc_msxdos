@@ -1,15 +1,10 @@
 #include "dos.h"
 
 
-int putchar(int c) __naked {
+int putchar(int c) __naked __z88dk_fastcall {
   c;
   __asm
-    pop af
-    pop de
-    push de
-    push af
-
-    ld a,e
+    ld a,l
     cp #0x0a
     
     ld c,#CONOUT

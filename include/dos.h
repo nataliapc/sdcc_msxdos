@@ -301,7 +301,7 @@ typedef struct {
 //char get_screen_size(void);
 
 int  getchar(void);
-int  putchar(int c);
+int  putchar(int c) __z88dk_fastcall;
 int  cprintf(const char *format, ...);
 int  kbhit(void);
 
