@@ -5,11 +5,11 @@ int putchar(int c) __naked __z88dk_fastcall {
   c;
   __asm
     ld a,l
+    ld e,a
     cp #0x0a
     
     ld c,#CONOUT
     jp nz,jumpPutchar$
-
 
 #if defined(DEBUG) || defined(TEST)
     push af            ; to use with openmsx and '-ext debugdevice' extension
