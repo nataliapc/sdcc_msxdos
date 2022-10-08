@@ -3,8 +3,16 @@
 
 #include <stdint.h>
 
-#define MSX2
-#define MSXDOS2
+#ifndef MSX2
+	#ifndef MSX1
+		#define MSX1
+	#endif
+#endif
+#ifndef MSXDOS2
+	#ifndef MSXDOS1
+		#define MSXDOS1
+	#endif
+#endif
 
 #define DOSCALL  call 5
 #define BIOSCALL ld iy,(#EXPTBL-1) \
@@ -15,8 +23,10 @@
 	#define NULL     0
 #endif
 
+#define FILEH	uint16_t
+
 /* SYSTEM vars */
-#if defined(MSX2) || defined(CPM)
+#if defined(MSXDOS1) || defined(CPM)
 	#define SYSFCB	0x005c	// File control block in the CP/M system area
 #endif
 #ifdef MSX2
@@ -303,6 +313,7 @@ typedef struct {
 int  getchar(void);
 int  putchar(int c) __z88dk_fastcall;
 int  cprintf(const char *format, ...);
+void cputs(char *str);
 int  kbhit(void);
 
 char  get_current_drive(void);

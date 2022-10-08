@@ -1,7 +1,7 @@
 #include "dos.h"
 
 
-uint16_t fread(char* buf, uint16_t size, char fp) __naked
+uint16_t fread(char* buf, uint16_t size, char fp) __naked __preserves_regs(iyl, iyh)
 {
   buf, size, fp;
 #ifdef MSXDOS2

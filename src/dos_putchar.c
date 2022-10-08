@@ -6,9 +6,9 @@ int putchar(int c) __naked __z88dk_fastcall {
   __asm
     ld a,l
     ld e,a
-    cp #0x0a
-    
     ld c,#CONOUT
+
+    cp #0x0a
     jp nz,jumpPutchar$
 
 #if defined(DEBUG) || defined(TEST)
