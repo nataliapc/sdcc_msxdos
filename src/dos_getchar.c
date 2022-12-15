@@ -1,5 +1,6 @@
 #include "dos.h"
 
+#ifndef DISABLE_CONIO
 
 int getchar(void) __naked {
 #ifdef MSX2
@@ -23,3 +24,5 @@ int getchar(void) __naked {
   __endasm;
 #endif
 }
+
+#endif

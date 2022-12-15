@@ -1,5 +1,6 @@
 #include "dos.h"
 
+#ifndef DISABLE_CONIO
 
 int putchar(int c) __naked __z88dk_fastcall
 {
@@ -38,3 +39,5 @@ jumpPutchar$:
     ret
   __endasm;
 }
+
+#endif

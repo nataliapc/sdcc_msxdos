@@ -6,7 +6,7 @@ DOCKER_RUN = docker-compose run --rm -u $(shell id -u):$(shell id -g) $(SDCC_SRV
 AS = $(DOCKER_RUN) sdasz80
 AR = $(DOCKER_RUN) sdar
 CC = $(DOCKER_RUN) sdcc
-HEX2BIN = $(DOCKER) hex2bin
+HEX2BIN = $(DOCKER_RUN) hex2bin
 EMUSCRIPTS = -script ./emulation/boot.tcl
 
 INCDIR = include/

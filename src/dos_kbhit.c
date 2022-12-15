@@ -1,5 +1,6 @@
 #include "dos.h"
 
+#ifndef DISABLE_CONIO
 
 int kbhit(void) __naked
 {
@@ -16,3 +17,5 @@ int kbhit(void) __naked
 	ret
   __endasm;
 }
+
+#endif

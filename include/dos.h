@@ -306,13 +306,13 @@ typedef struct {
 	uint32_t  fsize;		// 0x01C [4]  File size in bytes
 } DIRENTRY;
 
-//char get_screen_size(void);
-
-int  getchar(void);
-int  putchar(int c) __z88dk_fastcall;
-int  cprintf(const char *format, ...);
-void cputs(char *str);
-int  kbhit(void);
+#ifndef DISABLE_CONIO
+	int  putchar(int c) __z88dk_fastcall;
+	int  getchar(void);
+	int  cprintf(const char *format, ...);
+	void cputs(char *str);
+	int  kbhit(void);
+#endif
 
 char  get_current_drive(void);
 char  get_current_directory(char drive, char *path);

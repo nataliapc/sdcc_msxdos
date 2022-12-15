@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include "dos.h"
 
+#ifndef DISABLE_CONIO
 
 static void _printn(unsigned u, unsigned base, char issigned);
 static uint8_t _printn_long(uint32_t u, unsigned base, char issigned);
@@ -103,3 +104,5 @@ void _printf(const char *format, va_list va)
 		format++;
 	}
 }
+
+#endif
