@@ -1,7 +1,8 @@
 #include "dos.h"
 
 
-int putchar(int c) __naked __z88dk_fastcall {
+int putchar(int c) __naked __z88dk_fastcall
+{
   c;
   __asm
     ld a,l

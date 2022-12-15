@@ -1,6 +1,4 @@
-#ifndef ____DOS_H____
-#define ____DOS_H____
-
+#pragma once
 #include <stdint.h>
 
 #ifndef MSX2
@@ -359,5 +357,3 @@ char get_fast_out();
 void initializeMapper();
 void setMapperPage2(uint8_t page);
 void restoreMapperPage2();
-
-#endif //____DOS_H____

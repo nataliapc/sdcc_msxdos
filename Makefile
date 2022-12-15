@@ -1,9 +1,12 @@
 .PHONY: clean test release
 
-AS = sdasz80
-AR = sdar
-CC = sdcc
-HEX2BIN = hex2bin
+SDCC_SRV := sdcc410
+DOCKER_RUN = docker-compose run --rm -u $(shell id -u):$(shell id -g) $(SDCC_SRV)
+
+AS = $(DOCKER_RUN) sdasz80
+AR = $(DOCKER_RUN) sdar
+CC = $(DOCKER_RUN) sdcc
+HEX2BIN = $(DOCKER) hex2bin
 EMUSCRIPTS = -script ./emulation/boot.tcl
 
 INCDIR = include/
@@ -20,8 +23,10 @@ LDFLAGS = -rc
 CRT = $(OBJDIR)crt0msx_msxdos_advanced.s.rel
 
 #DEBUG = -DDEBUG
-CCFLAGS :=  --code-loc 0x0178 --data-loc 0 --no-std-crt0 --out-fmt-ihx --fomit-frame-pointer --opt-code-speed \
-			--disable-warning 196 --disable-warning 85 -mz80 $(DEBUG) $(EXTERNFLAGS)
+DEFINES := -D$(shell echo '$(SDCC_SRV)' | tr '[:lower:]' '[:upper:]')
+CCFLAGS :=  --code-loc 0x0178 --data-loc 0 --no-std-crt0 \
+			--out-fmt-ihx --fomit-frame-pointer --opt-code-speed\
+			--disable-warning 196 --disable-warning 85 -mz80 $(DEBUG) $(DEFINES) $(EXTERNFLAGS)
 
 LIBS = $(LIBDIR)dos.lib
 TEST = test.com
