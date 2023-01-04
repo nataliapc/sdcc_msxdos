@@ -1,12 +1,13 @@
+#include <stdbool.h>
 #include "dos.h"
 
 
-char fileexists(char *filename)
+bool fileexists(char *filename)
 {
-	uint16_t fp = fopen(filename, O_RDONLY);
-	if (fp<0xff00) {
-		fclose(fp);
-		return 1;
+	FILEH fh = fopen(filename, O_RDONLY);
+	if (fh < 0xff00) {
+		fclose(fh);
+		return true;
 	}
-	return 0;
+	return false;
 }

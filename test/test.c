@@ -6,7 +6,7 @@
 
 int main(char **argv, int argc)
 {
-	printf("DOS Version: %u\n\r", dosver());
+	cprintf("DOS Version: %u\n\r", dosver());
 
 	return 0;
 }

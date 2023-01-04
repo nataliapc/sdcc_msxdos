@@ -1,7 +1,10 @@
 #include "dos.h"
 
 
-char get_drive_params(char drive, DPARM_info *param) __naked {
+#ifdef MSXDOS2
+
+char get_drive_params(char drive, DPARM_info *param) __naked __sdcccall(0)
+{
   drive, param;
   __asm
     push ix
@@ -11,6 +14,8 @@ char get_drive_params(char drive, DPARM_info *param) __naked {
     ld l,0(ix)
     ld e,1(ix)
     ld d,2(ix)
+    pop ix
+
     ld c,#DPARM
     DOSCALL
 
@@ -18,11 +23,18 @@ char get_drive_params(char drive, DPARM_info *param) __naked {
     or a
     jr z, dparm_noerrors$
     ld l, a
-    jp dparm_errors$
+    ret
   dparm_noerrors$:
     ld l, #0x00
-  dparm_errors$:
-    pop ix
     ret
   __endasm;
 }
+
+#else
+
+char get_drive_params(char drive, DPARM_info *param)
+{
+    return ERR_IBDOS;
+}
+
+#endif

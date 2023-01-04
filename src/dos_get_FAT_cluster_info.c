@@ -1,29 +1,32 @@
 #include "dos.h"
 
 
-char get_FAT_cluster_info(char drive, uint16_t clusterNumber, CLUSTER_info *info) __naked
+/*
+Get information for a cluster on a FAT drive (_GETCLUS, 7Eh)
+Parameters:  C = 7EH (_GETCLUS)
+             A = Drive number (0=default, 1=A: etc.)
+             DE = Cluster number
+             HL = Pointer to a 16 byte buffer
+Results:     A = Error code
+*/
+ERR8 get_FAT_cluster_info(char drive, uint16_t clusterNumber, CLUSTER_info *info) __naked __sdcccall(0)
 {
-  drive, info;
-  __asm
-    push ix
-    ld ix,#4
-    add ix,sp
+	drive, info;
+	__asm
+		push ix
+		ld ix,#4
+		add ix,sp
+		ld a,0(ix)		// drive
+		ld e,1(ix)		// clusterNumber
+		ld d,2(ix)
+		ld l,3(ix)		// *info
+		ld h,4(ix)
+		pop ix
 
-    ld a,0(ix)
-    ld e,1(ix)
-    ld d,2(ix)
-    ld l,3(ix)
-    ld h,4(ix)
-    ld c,#GETCLUS
-    DOSCALL
+		ld c,#GETCLUS
+		DOSCALL
 
-    ld hl, #0x00
-    or a
-    jr z, gclus_noerrors$
-    ld l, a
-  gclus_noerrors$:
-    ld l, #0x00
-    pop ix
-    ret
-  __endasm;
+		ld l, a
+		ret
+	__endasm;
 }

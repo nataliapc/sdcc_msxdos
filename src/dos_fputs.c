@@ -1,9 +1,8 @@
 #include <string.h>
 #include "dos.h"
 
-uint16_t fputs(char *str, char fp)
+RE16 fputs(char *str, char fh)
 {
-	uint16_t len = strlen(str);
-	fwrite(str, len, fp);
-	return 1;
+	uint16_t size = strlen(str);
+	return fwrite(str, size, fh);
 }

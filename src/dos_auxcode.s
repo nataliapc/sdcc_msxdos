@@ -7,6 +7,7 @@ SYSFCB = 0x5c
 ; Fills with 0x00 the FCB and with 0x20(' ') the filename
 ; REGs changed: A, BC, DE, HL
 dos_initializeFCB::
+_dos_initializeFCB::
     ld      hl,#SYSFCB            ; Initialize FCB with zeroes
     xor     a
     ld      (hl),a

@@ -1,18 +1,16 @@
 #include "dos.h"
 
 
-uint16_t fgets(char *str, uint16_t n, uint16_t fh)
+char* fgets(char *str, uint16_t size, uint16_t fh)
 {
 	char *p = str;
-	uint16_t ret = 0;
+	uint16_t ret;
 
-	n++;
-	while (n) {
-		ret = fread(p, 1, fh);
-		if (ret>=0xff00 || *p=='\n') break;	// CR
-		if (*p!='\r') { p++; n--; }			// LF
+	while (--size) {
+		ret = fread(p++, 1, fh);
+		if (ret == 0xffc7) break;	// ERR_EOF
+		if (ret & 0xff00) return 0;
 	}
-	if (ret==0xff00|ERR_EOF && p!=str) ret = 0;
 	*p = '\0';
-	return ret;
+	return str;
 }

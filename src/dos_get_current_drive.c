@@ -1,17 +1,10 @@
 #include "dos.h"
 
 
-char get_current_drive(void) __naked {
+char get_current_drive() __naked
+{
   __asm
-    push ix
-
     ld c,#CURDRV
-    DOSCALL
-
-    ld h, #0x00
-    ld l, a
-
-    pop ix
-    ret
+    DOSJP
   __endasm;
 }

@@ -1,11 +1,62 @@
 #include "dos.h"
 
 
-#ifdef MSXDOS2
+#ifdef MSXDOS1
 
-uint32_t fseek (char fp, int32_t offset, char origin) __naked
+uint32_t fseek(char fh, uint32_t offset, char origin)
 {
-  fp;
+    fh;
+    FCB *fcb = (FCB*)SYSFCB;
+
+    if (origin==SEEK_SET) {
+        fcb->rndRecord = offset;
+    } else
+    if (origin==SEEK_CUR) {
+        fcb->rndRecord += offset;
+    } else
+    if (origin==SEEK_END) {
+        fcb->rndRecord = fcb->fileSize - offset;
+    } else {
+        return 0xff00|ERR_INTER;
+    }
+    return fcb->rndRecord;
+}
+
+#endif
+
+#ifdef MSXDOS2
+/*
+    MOVE FILE HANDLE POINTER (4AH)
+    Parameters:    C = 4AH (_SEEK) 
+                   B = File handle
+                   A = Method code
+               DE:HL = Signed offset
+    Results:       A = Error
+               DE:HL = New file pointer
+
+The file pointer associated with the specified file handle will be altered
+according to the method code and offset, and the new pointer value returned in
+DE:HL.
+The method code specifies where the signed offset is relative to as follows:
+     A=0  Relative to the beginning of the file
+     A=1  Relative to the current position
+     A=2  Relative to the end of the file.
+Note that an offset of zero with an method code of 1 will simply return the
+current pointer value, and with a method code of 2 will return the size of the
+file. No end of file check is done so it is quite possible (and sometimes
+useful) to set the file pointer beyond the end of the file. If there are any
+copies of this file handle created by the "duplicate file handle" function
+(function 47h) or the "fork" function (function 60h) then their file pointer
+will also be changed.
+
+The file pointer only has any real meaning on disk files since random access is
+possible. On device files the file pointer is updated appropriately when any
+read or write is done, and can be examined or altered by this function. However
+changing will have no effect and examining it is very unlikely to be useful.
+*/
+uint32_t fseek (char fh, uint32_t offset, char origin) __naked __sdcccall(0)
+{
+  fh;
   offset;
   origin;
 
@@ -25,32 +76,12 @@ uint32_t fseek (char fp, int32_t offset, char origin) __naked
 
     or a
     jr z, seek_noerror$
-    ld de, #0xffff
     ld h, #0xff
     ld l, a
   seek_noerror$:
     pop ix
     ret
   __endasm;
-}
-
-#else //MSXDOS1 / CPM (FCB)
-
-uint32_t fseek (char fp, int32_t offset, char origin)
-{
-    fp;
-    FCB *fcb = (FCB*)SYSFCB;
-
-    if (origin==SEEK_SET) {
-        fcb->rndRecord = offset;
-    } else
-    if (origin==SEEK_CUR) {
-        fcb->rndRecord += offset;
-    } else {
-        //TODO: Support SEEK_END for MSX-DOS 1.x
-        return 0xffff;
-    }
-    return fcb->rndRecord;
 }
 
 #endif

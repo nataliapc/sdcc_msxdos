@@ -1,5 +1,13 @@
 #pragma once
 #include <stdint.h>
+#include <stdbool.h>
+
+
+#define __SDCC_VERSION_NUM	(__SDCC_VERSION_MAJOR*10000 + __SDCC_VERSION_MINOR *100 + __SDCC_VERSION_PATCH)
+
+#if __SDCC_VERSION_NUM < 40112
+	#define __sdcccall(x)
+#endif
 
 #ifndef MSX2
 	#ifndef MSX1
@@ -12,9 +20,16 @@
 	#endif
 #endif
 
-#define DOSCALL  call 5
-#define BIOSCALL ld iy,(#EXPTBL-1) \
-                 call CALSLT
+extern const uint8_t DOS_VER;
+
+//=========================================================
+// Tools
+#define DOSCALL     call 5
+#define DOSJP       jp 5
+#define BIOSCALL    ld iy,(#EXPTBL-1) \
+                    call CALSLT
+#define EXTBIOCALL  call EXTBIO
+
 
 #define MAX_PATH 64
 #ifndef NULL
@@ -41,7 +56,7 @@
 
 #define FOPEN   0x0F		// Open file (FCB)				CPM MSX1
 #define FCLOSE  0x10		// Close file (FCB)				CPM MSX1
-#define FDELETE 0x13		// Delete file (FCB)			CPM MSX1
+#define FDEL    0x13		// Delete file (FCB)			CPM MSX1
 #define RDSEQ   0x14		// Sequential read (FCB)		CPM MSX1
 #define WRSEQ   0x15		// Sequential write FCB)		CPM MSX1
 #define FMAKE   0x16		// Create file (FCB)			CPM MSX1
@@ -64,6 +79,7 @@
 #define OPEN    0x43		// Open file handle				         NEW
 #define CREATE  0x44		// Create file handle			         NEW
 #define CLOSE   0x45		// Close file handle			         NEW
+#define ENSURE  0x46		// Ensure file handle			         NEW
 #define READ    0x48		// Read from file handle		         NEW
 #define WRITE   0x49		// Write from file handle		         NEW
 #define SEEK    0x4A		// Move file handle pointer 	         NEW
@@ -190,6 +206,9 @@
 #define ERR_NORAM   0xde	//Not enough memory: MSX-DOS has run out of memory in its 16k kernel data segment. Try reducing the number of sector buffers or removing some environment strings. Also occurs if there are no free segments for creating the RAMdisk.
 #define ERR_INTER   0xdf	//Internal error: Should never occur.
 
+typedef uint16_t RE16;
+typedef uint8_t  ERR8;
+
 typedef struct {			// Off ID  Siz CP/M Function           MSXDOS Function
 	uint8_t  drvNum;		//  0 [DR] 1   Drive number containing the file (0:default drive, 1:A, 2:B, ..., 8:H)
 	uint8_t  filename[11];	//  1 [Fn] 11  8 bytes for filename and 3 bytes for extension.
@@ -306,54 +325,92 @@ typedef struct {
 	uint32_t  fsize;		// 0x01C [4]  File size in bytes
 } DIRENTRY;
 
+
+typedef struct {			// Returned data by parse_pathname(...)
+	uint8_t   drive;		// Logical drive number (1=A: etc)
+	char     *lastItem;		// Pointer to start of last item
+	char     *termChar;		// Pointer to termination character
+//	union {					// Parse result flags
+		uint8_t flags;
+//		struct {
+//			unsigned moreThanDrive: 1;	// b0 - set if any characters parsed other than drive name
+//			unsigned anyDirectory:  1;	// b1 - set if any directory path specified
+//			unsigned anyDrive:      1;	// b2 - set if drive name specified
+//			unsigned anyFilename:   1;	// b3 - set if main filename specified in last item
+//			unsigned anyExtension:  1;	// b4 - set if filename extension specified in last item
+//			unsigned lastAmbiguous: 1;	// b5 - set if last item is ambiguous
+//			unsigned lastIsDot:     1;	// b6 - set if last item is "." or ".."
+//			unsigned lastIsDosDot:  1;	// b7 - set if last item is ".."
+//		} value;
+//	} flags;
+} PATH_parsed;
+
+typedef struct {
+	uint8_t segment;		// RAM Extension segment
+	uint8_t slotAddress;	// F000SSPP
+} MAPPER_Segment;
+
+
 #ifndef DISABLE_CONIO
-	int  putchar(int c) __z88dk_fastcall;
-	int  getchar(void);
+	#if __SDCC_VERSION_NUM < 40112
+		int  putchar(int c) __z88dk_fastcall;
+	#else
+		int  putchar(int c);
+	#endif
+	int  getchar();
 	int  cprintf(const char *format, ...);
 	void cputs(char *str);
-	int  kbhit(void);
+	int  kbhit();
 #endif
 
-char  get_current_drive(void);
+char  get_current_drive();
 char  get_current_directory(char drive, char *path);
-char* get_program_path();
+char* get_program_path(char *path);
 char  get_drive_params(char drive, DPARM_info *param);
 
-uint16_t fopen(char *fn, char mode);
-uint8_t  fclose(char fp);
-uint16_t fcreate(char *fn, char mode, char attributes);
-uint16_t remove(char *file);
-uint16_t fread(char* buf, uint16_t size, char fp);
-uint16_t fwrite(char* buf, uint16_t size, char fp);
-uint16_t fputs(char* str, char fp);
-uint16_t fgets(char* bug, uint16_t size, uint16_t fh);
-uint32_t fseek (char fp, int32_t offset, char origin);
-uint32_t filesize(char *fn);
-char     fileexists(char *fn);
+FILEH fopen(char *filename, char mode) __sdcccall(0);
+FILEH fcreate(char *filename, char mode, char attributes) __sdcccall(0);
+FILEH fclose(char fh) __sdcccall(0);
+RE16 fread(char* buf, uint16_t size, char fh) __sdcccall(0);
+RE16 fwrite(char* buf, uint16_t size, char fh) __sdcccall(0);
+RE16 fputs(char* str, char fh);
+char* fgets(char* buf, uint16_t size, uint16_t fh);
+FILEH fflush(char fh);
+uint32_t fseek (char fh, uint32_t offset, char origin);
+uint32_t ftell(FILEH fh);
+uint32_t filesize(char *filename);
+ERR8 remove(char *filename) __sdcccall(0);
+bool fileexists(char* filename);
 
-char dosver(void);
-int  parse_pathname(char volume_name_flag, char* s);
-void exit(int code);
+uint8_t dosver() __sdcccall(0);
+ERR8 get_env(char* name, char* buffer, uint8_t buffer_size);
+ERR8 parse_pathname(char* str, PATH_parsed *info);
+void exit(uint8_t code) __sdcccall(0);
 void exit0();
-void explain(char* buffer, char error_code);
+void explain(char* buffer, uint8_t error_code);
 void set_abort_routine(void *routine) __z88dk_fastcall;
-char get_env(char* name, char* buffer, char buffer_size);
 
-void set_transfer_address(uint8_t *memaddress);
-char read_abs_sector(uint8_t drv, uint16_t startsec, uint8_t nsec);
-char write_abs_sector(uint8_t drv, uint16_t startsec, uint8_t nsec);
+void set_transfer_address(void *memaddress) __sdcccall(0);
+ERR8 read_abs_sector(uint8_t drv, uint16_t startsec, uint8_t nsec);
+ERR8 write_abs_sector(uint8_t drv, uint16_t startsec, uint8_t nsec);
 
 // Nextor Only
-char get_drive_letter_info(char drive, DRIVE_info *info);
-char get_FAT_cluster_info(char drive, uint16_t clusterNumber, CLUSTER_info *info);
-char read_abs_sector_drv(uint8_t drv, uint32_t startsec, uint8_t nsec);
-char write_abs_sector_drv(uint8_t drv, uint32_t startsec, uint8_t nsec);
-void set_drive_lock(uint8_t drive, uint8_t value);
-char get_drive_lock(uint8_t drive);
-void set_fast_out(uint8_t value);
-char get_fast_out();
+ERR8 get_drive_letter_info(char drive, DRIVE_info *info) __sdcccall(0);
+ERR8 get_FAT_cluster_info(char drive, uint16_t clusterNumber, CLUSTER_info *info) __sdcccall(0);
+ERR8 read_abs_sector_drv(uint8_t drv, uint32_t startsec, uint8_t nsec);
+ERR8 write_abs_sector_drv(uint8_t drv, uint32_t startsec, uint8_t nsec);
+RE16 set_drive_lock(uint8_t drive, uint8_t value);
+RE16 get_drive_lock(uint8_t drive);
+RE16 set_fast_out(uint8_t value);
+RE16 get_fast_out();
 
 // Memory mapper
-void initializeMapper();
-void setMapperPage2(uint8_t page);
-void restoreMapperPage2();
+uint8_t mapperInit();
+uint8_t mapperGetSlot();
+uint8_t mapperGetTotalSegments();
+uint8_t mapperGetFreeSegments();
+ERR8    mapperAllocateSegment(MAPPER_Segment *returnedData) __z88dk_fastcall;
+ERR8    mapperFreeSegment(MAPPER_Segment *segmentToFree) __z88dk_fastcall;
+void    mapperSetSegment(uint8_t page, MAPPER_Segment *segment);
+uint8_t mapperGetCurrentSegment(uint8_t page);
+void    mapperSetOriginalSegmentBack(uint8_t page);

@@ -1,5 +1,6 @@
 lib
 out
 test/test.com
-
-
+unitTests/obj
+unitTests/dsk/file.tmp
+unitTests/dsk/testdos1.com
