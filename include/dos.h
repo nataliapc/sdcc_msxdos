@@ -358,7 +358,7 @@ typedef struct {
 	#else
 		int  putchar(int c) __sdcccall(1);
 	#endif
-	int  getchar(void);
+	int  getchar(void) __sdcccall(1);
 	int  cprintf(const char *format, ...);
 	void cputs(char *str);
 	int  kbhit(void);

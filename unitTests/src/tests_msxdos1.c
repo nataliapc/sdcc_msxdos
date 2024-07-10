@@ -3,6 +3,7 @@
 #include "heap.h"
 #include "assert.h"
 #include "dos.h"
+#include "msx_const.h"
 
 #pragma opt_code_size
 
@@ -76,6 +77,25 @@ static void create_file(char *text)
 // =============================================================================
 // TESTS
 // =============================================================================
+
+void test_getchar()
+{
+	const char *_func = __func__;
+
+	//BDD given
+	beforeEach();
+	ADDR_POINTER_BYTE(ADDR_POINTER_WORD(PUTPNT)) = '#';
+	ADDR_POINTER_WORD(PUTPNT)++;
+
+//__asm out(0x18),a __endasm;
+	//BDD when
+	char result = getchar();
+//__asm out(0x18),a __endasm;
+
+	//BDD then
+	ASSERT_EQUAL(result, '#', ERROR);
+	SUCCEED();
+}
 
 void test_get_current_drive()
 {
@@ -898,6 +918,8 @@ int main(char** argv, int argc)
 	cputs("### UNIT TESTS for DOS.LIB ###");
 
 	beforeAll();
+
+	test_getchar();
 
 	test_get_current_drive();
 	test_get_current_directory(); test_get_current_directory_FAILS();

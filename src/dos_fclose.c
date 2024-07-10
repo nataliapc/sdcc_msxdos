@@ -30,7 +30,7 @@ FILEH fclose(char fh) __naked __sdcccall(0)
 #endif
 
 /*
-CLOSE FILE HANDLE (45H)
+    CLOSE FILE HANDLE (45H)
     Parameters:    C = 45H (_CLOSE) 
                    B = File handle
     Results:       A = Error
