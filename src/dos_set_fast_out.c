@@ -41,7 +41,7 @@ inline uint16_t set_fast_out(uint8_t value)
 	return _fast_out(1, value);
 }
 
-inline uint16_t get_fast_out()
+inline uint16_t get_fast_out(void)
 {
 	return _fast_out(0, 0);
 }

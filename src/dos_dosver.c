@@ -8,7 +8,7 @@
 #endif
 
 
-uint8_t dosver() __naked __sdcccall(0)
+uint8_t dosver(void) __naked __sdcccall(0)
 {
 /*
     GET MSX-DOS VERSION NUMBER (6FH)

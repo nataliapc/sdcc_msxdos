@@ -18,7 +18,7 @@ static const uint16_t const _jumpTableAddress[4] = {
 	0x1b,		// GET_Px
 };
 
-static uint8_t _getJumpTable() __sdcccall(0);
+static uint8_t _getJumpTable(void) __sdcccall(0);
 static uint8_t _mapperGetSegment(uint8_t page) __z88dk_fastcall;
 static void    _mapperSetSegment(uint8_t page, uint8_t segment) __sdcccall(0);
 
@@ -26,7 +26,7 @@ static void    _mapperSetSegment(uint8_t page, uint8_t segment) __sdcccall(0);
 //###################################################################
 // Public Functions
 
-uint8_t mapperInit()
+uint8_t mapperInit(void)
 {
 	int i;
 	uint8_t freeSegments = _getJumpTable();
@@ -43,17 +43,17 @@ uint8_t mapperInit()
 	return freeSegments;
 }
 
-inline uint8_t mapperGetSlot()
+inline uint8_t mapperGetSlot(void)
 {
 	return _slotMainMapper;
 }
 
-inline uint8_t mapperGetTotalSegments()
+inline uint8_t mapperGetTotalSegments(void)
 {
 	return _totalSegments;
 }
 
-inline uint8_t mapperGetFreeSegments()
+inline uint8_t mapperGetFreeSegments(void)
 {
 	return _getJumpTable();
 }
@@ -138,7 +138,7 @@ inline void mapperSetOriginalSegmentBack(uint8_t page)
 //###################################################################
 // Private Functions
 
-static uint8_t _getJumpTable() __naked __sdcccall(0)
+static uint8_t _getJumpTable(void) __naked __sdcccall(0)
 {
 	__asm
 		xor a

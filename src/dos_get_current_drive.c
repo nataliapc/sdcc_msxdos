@@ -1,7 +1,7 @@
 #include "dos.h"
 
 
-char get_current_drive() __naked
+char get_current_drive(void) __naked
 {
   __asm
     ld c,#CURDRV

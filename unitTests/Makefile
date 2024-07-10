@@ -1,7 +1,8 @@
 .PHONY: default all lib clean test legacy
 
-SDCC_SRV := sdcc420
-DOCKER_RUN = docker-compose run --rm -u $(shell id -u):$(shell id -g) $(SDCC_SRV)
+SDCC_VER := 4.2.0
+DOCKER_IMG = nataliapc/sdcc:$(SDCC_VER)
+DOCKER_RUN = docker run -i --rm -u $(shell id -u):$(shell id -g) -v .:/src -w /src $(DOCKER_IMG)
 
 AS = $(DOCKER_RUN) sdasz80
 AR = $(DOCKER_RUN) sdar
@@ -55,18 +56,18 @@ $(LIBDIR)$(LIBS): ../lib/$(LIBS)
 $(OBJDIR)%.rel: $(SRCDIR)%.s
 	@echo "$(COL_WHITE)#### ASM $@$(COL_RESET)"
 	@$(DIR_GUARD)
-	$(AS) -g -o $@ $^
+	$(AS) -g -o $@ $^ ;
 
 $(OBJDIR)%.rel: $(SRCDIR)%.c
 	@echo "$(COL_WHITE)#### CC $@$(COL_RESET)"
 	@$(DIR_GUARD)
-	$(CC) $(CCFLAGS) -I$(LIBDIR) -c -o $@ $^
+	$(CC) $(CCFLAGS) -I$(LIBDIR) -c -o $@ $^ ;
 
 $(OBJDIR)testdos1.com: $(REL_LIBS) $(SRCDIR)tests_msxdos1.c
 	@echo "$(COL_YELLOW)######## Compiling $@$(COL_RESET)"
 	@$(DIR_GUARD)
-	$(CC) $(CCFLAGS) -I$(LIBDIR) -L$(LIBDIR) $(subst .com,.c,$^) -o $(subst .com,.ihx,$@)
-	@$(HEX2BIN) -e com $(subst .com,.ihx,$@)
+	$(CC) $(CCFLAGS) -I$(LIBDIR) -L$(LIBDIR) $(subst .com,.c,$^) -o $(subst .com,.ihx,$@) ;
+	@$(HEX2BIN) -e com $(subst .com,.ihx,$@) ;
 	@echo "**** Copying .COM files to DSK/"
 	@cp $@ $(DSKDIR)
 

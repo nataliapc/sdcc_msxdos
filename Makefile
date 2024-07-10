@@ -1,7 +1,8 @@
 .PHONY: clean test release
 
-SDCC_SRV := sdcc420
-DOCKER_RUN = docker-compose run --rm -u $(shell id -u):$(shell id -g) $(SDCC_SRV)
+SDCC_VER := 4.2.0
+DOCKER_IMG = nataliapc/sdcc:$(SDCC_VER)
+DOCKER_RUN = docker run -i --rm -u $(shell id -u):$(shell id -g) -v .:/src -w /src $(DOCKER_IMG)
 
 AS = $(DOCKER_RUN) sdasz80
 AR = $(DOCKER_RUN) sdar
@@ -50,29 +51,29 @@ all: $(LIBS)
 $(OBJDIR)%.s.rel: */%.s
 	@echo "$(COL_WHITE)======== ASM $@$(COL_RESET)"
 	$(ODIR_GUARD)
-	$(AS) -I$(INCDIR) -o $@ $^
+	$(AS) -I$(INCDIR) -o $@ $^ ;
 
 $(OBJDIR)%.c.rel: */%.c
 	@echo "$(COL_WHITE)======== CC $@$(COL_RESET)"
 	$(ODIR_GUARD)
-	$(CC) -I$(INCDIR) $(CCFLAGS) -c -o $@ $^
+	$(CC) -I$(INCDIR) $(CCFLAGS) -c -o $@ $^ ;
 
 $(LIBDIR)dos.lib: $(patsubst $(SRCDIR)%, $(OBJDIR)%.rel, $(wildcard $(SRCDIR)dos_*))
 	@echo "$(COL_ORANGE)################ Compiling $@$(COL_RESET)"
 	$(LIBDIR_GUARD)
-	$(AR) $(LDFLAGS) $@ $^
+	$(AR) $(LDFLAGS) $@ $^ ;
 
 $(TEST): $(LIBS) $(CRT) $(patsubst $(TESTDIR)%, $(OBJDIR), $(wildcard $(TESTDIR)*))
 	@echo "$(COL_YELLOW)################ Compiling $@$(COL_RESET)"
-	$(CC) $(CCFLAGS) -I$(INCDIR) -L$(INCDIR) -L$(LIBDIR) $(LIBS) $(CRT) $(TESTDIR)$(subst .com,.c,$@) -o $(OBJDIR)$(subst .com,.ihx,$@)
-	$(HEX2BIN) -e com $(OBJDIR)$(subst .com,.ihx,$@)
+	$(CC) $(CCFLAGS) -I$(INCDIR) -L$(INCDIR) -L$(LIBDIR) $(LIBS) $(CRT) $(TESTDIR)$(subst .com,.c,$@) -o $(OBJDIR)$(subst .com,.ihx,$@) ;
+	$(HEX2BIN) -e com $(OBJDIR)$(subst .com,.ihx,$@) ;
 	@mv $(OBJDIR)$(TEST) $(TESTDIR)$(TEST)
 
 test: $(LIBS) $(TEST)
 	openmsx -machine msx2_eu -ext msxdos2 -ext debugdevice -diska $(TESTDIR) $(EMUSCRIPTS)
 
 unittest: $(LIBS)
-	$(MAKE) -C unitTests SDCC_SRV=$(SDCC_SRV)
+	$(MAKE) -C unitTests SDCC_VER=$(SDCC_VER) test
 
 clean:
 	rm -rf $(LIBDIR) $(OBJDIR)

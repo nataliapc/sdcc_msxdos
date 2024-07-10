@@ -14,7 +14,7 @@ of that function call, and also the "Program Interface Specification", for
 details of what happens when a program terminates. This function call never
 returns to the caller.
 */
-void exit0() __naked
+void exit0(void) __naked
 {
 	__asm
 		ld c,#TERM0

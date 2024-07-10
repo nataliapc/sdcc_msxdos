@@ -3,7 +3,8 @@
 #include <stdbool.h>
 
 
-#define __SDCC_VERSION_NUM	(__SDCC_VERSION_MAJOR*10000 + __SDCC_VERSION_MINOR *100 + __SDCC_VERSION_PATCH)
+#define __SDCC_VERSION_NUM	(__SDCC_VERSION_MAJOR * 10000 + __SDCC_VERSION_MINOR * 100 + __SDCC_VERSION_PATCH)
+
 
 #if __SDCC_VERSION_NUM < 40112
 	#define __sdcccall(x)
@@ -355,15 +356,15 @@ typedef struct {
 	#if __SDCC_VERSION_NUM < 40112
 		int  putchar(int c) __z88dk_fastcall;
 	#else
-		int  putchar(int c);
+		int  putchar(int c) __sdcccall(1);
 	#endif
-	int  getchar();
+	int  getchar(void);
 	int  cprintf(const char *format, ...);
 	void cputs(char *str);
-	int  kbhit();
+	int  kbhit(void);
 #endif
 
-char  get_current_drive();
+char  get_current_drive(void);
 char  get_current_directory(char drive, char *path);
 char* get_program_path(char *path);
 char  get_drive_params(char drive, DPARM_info *param);
@@ -382,11 +383,11 @@ uint32_t filesize(char *filename);
 ERR8 remove(char *filename) __sdcccall(0);
 bool fileexists(char* filename);
 
-uint8_t dosver() __sdcccall(0);
+uint8_t dosver(void) __sdcccall(0);
 ERR8 get_env(char* name, char* buffer, uint8_t buffer_size);
 ERR8 parse_pathname(char* str, PATH_parsed *info);
 void exit(uint8_t code) __sdcccall(0);
-void exit0();
+void exit0(void);
 void explain(char* buffer, uint8_t error_code);
 void set_abort_routine(void *routine) __z88dk_fastcall;
 
@@ -402,13 +403,13 @@ ERR8 write_abs_sector_drv(uint8_t drv, uint32_t startsec, uint8_t nsec);
 RE16 set_drive_lock(uint8_t drive, uint8_t value);
 RE16 get_drive_lock(uint8_t drive);
 RE16 set_fast_out(uint8_t value);
-RE16 get_fast_out();
+RE16 get_fast_out(void);
 
 // Memory mapper
-uint8_t mapperInit();
-uint8_t mapperGetSlot();
-uint8_t mapperGetTotalSegments();
-uint8_t mapperGetFreeSegments();
+uint8_t mapperInit(void);
+uint8_t mapperGetSlot(void);
+uint8_t mapperGetTotalSegments(void);
+uint8_t mapperGetFreeSegments(void);
 ERR8    mapperAllocateSegment(MAPPER_Segment *returnedData) __z88dk_fastcall;
 ERR8    mapperFreeSegment(MAPPER_Segment *segmentToFree) __z88dk_fastcall;
 void    mapperSetSegment(uint8_t page, MAPPER_Segment *segment);
