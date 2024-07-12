@@ -1,6 +1,9 @@
 #include "dos.h"
 
 
+static ERRB _drive_lock(uint8_t drive, uint8_t cmd, uint8_t value) __naked __sdcccall(0)
+{
+	drive, cmd, value;
 /*
 Lock/unlock a drive, or get lock state for a drive (_LOCK, 77h)
 Parameters:  C = 77H (_LOCK)
@@ -13,9 +16,6 @@ Parameters:  C = 77H (_LOCK)
 Results:     A = Error code
              B = Current lock status, same as input
 */
-static uint16_t _drive_lock(uint8_t drive, uint8_t cmd, uint8_t value) __naked __sdcccall(0)
-{
-	drive, cmd, value;
 	__asm
 		push ix
 		ld ix,#4
@@ -28,22 +28,17 @@ static uint16_t _drive_lock(uint8_t drive, uint8_t cmd, uint8_t value) __naked _
 		ld c,#LOCK
 		DOSCALL
 
-		ld h, #0
-		ld l, b
-		or a
-		ret z
-		dec h
-		ld l, a
+		ld l,a			; Returns L
 		ret
 	__endasm;
 }
 
-inline RE16 set_drive_lock(uint8_t drive, uint8_t value)
+inline ERRB setDriveLock(uint8_t drive, uint8_t value)
 {
 	return _drive_lock(drive, 1, value);
 }
 
-inline RE16 get_drive_lock(uint8_t drive)
+inline ERRB getDriveLock(uint8_t drive)
 {
 	return _drive_lock(drive, 0, 0);
 }

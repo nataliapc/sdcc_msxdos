@@ -1,11 +1,9 @@
 #include "dos.h"
 
 
-void set_abort_routine(void *routine) __naked __z88dk_fastcall
+void dos2_setAbortRoutine(void *routine) __naked __sdcccall(1)
 {
 	routine;
-
-#ifdef MSXDOS2
 /*
     DEFINE ABORT EXIT ROUTINE (63H)
     Parameters:    C = 63H (_DEFAB) 
@@ -56,16 +54,9 @@ in conjunction with a disk error handler routine (see function 64h) to allow an
 option to abort the current MSX-DOS call when a disk error occurs.
 */
 	__asm
-		ex de,hl
+		ex de,hl		; DE = Param routine
 
 		ld c,#DEFAB
-		DOSCALL
-
-		ret
+		DOSJP
 	__endasm;
-#endif
-
-#ifdef MSXDOS1
-	__asm__ ("ret");
-#endif
 }

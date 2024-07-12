@@ -1,7 +1,7 @@
 #include "dos.h"
 
 
-inline uint32_t ftell(FILEH fh)
+inline RETDW ftell(void)
 {
-	return fseek(fh, 0, SEEK_CUR);
+	return fseek(0, SEEK_CUR);
 }

@@ -4,9 +4,9 @@
 
 bool fileexists(char *filename)
 {
-	FILEH fh = fopen(filename, O_RDONLY);
-	if (fh < 0xff00) {
-		fclose(fh);
+	ERRB result = fopen(filename);
+	if (result == 0) {
+		fclose();
 		return true;
 	}
 	return false;

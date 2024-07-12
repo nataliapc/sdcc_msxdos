@@ -20,7 +20,7 @@ ifeq ($(UNAME_S),Linux)
 	COL_RESET = \e[0m
 endif
 
-CXXFLAGS := -DUNIT_TESTS -DMSXDOS1
+CXXFLAGS := -DUNIT_TESTS
 #FULLOPT := --max-allocs-per-node 2000000
 OPFLAGS := --opt-code-size $(FULLOPT)
 WRFLAGS := --less-pedantic --disable-warning 196 --disable-warning 84 --disable-warning 85

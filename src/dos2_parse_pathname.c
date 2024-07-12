@@ -1,7 +1,14 @@
 #include "dos.h"
 
 
-#ifdef MSXDOS2
+#define STRUCT_DRIVE		0
+#define STRUCT_LASTITEM		1
+#define STRUCT_TERMCHAR		3
+#define STRUCT_FLAGS		5
+
+ERRB dos2_parsePathname(char *str, PATH_parsed *info) __naked __sdcccall(1)
+{
+	str, info;
 /*
     PARSE PATHNAME (5BH)
     Parameters:    C = 5BH (_PARSE) 
@@ -54,57 +61,26 @@ component). The bit assignments are as follows:
     b6 - set if last item is "." or ".."
     b7 - set if last item is ".."
 */
-#define STRUCT_DRIVE		0
-#define STRUCT_LASTITEM		1
-#define STRUCT_TERMCHAR		3
-#define STRUCT_FLAGS		5
-
-ERR8 parse_pathname(char* str, PATH_parsed *info) __naked __sdcccall(0)
-{
-	str, info;
 	__asm
-		push ix
-		ld ix,#4
-		add ix,sp
-		ld e,0(ix)				; str pointer
-		ld d,1(ix)
+		ex de,hl			; DE = Param str
+							; HL = Param info
+		push hl
+		pop iy				; IY = Param info
 
-		ld a,2(ix)				; info str
-		.db 0xfd,0x68+7				;ld iyl,a [FD 68+q]
-
-		ld a,3(ix)
-		.db 0xfd,0x60+7				;ld iyh,a [FD 60+q]
-		pop ix
-
-		ld b,#0
+							; DE = ASCIIZ string for parsing
+		ld b,#0				; B = Volume name flag (bit 4)
 		ld c,#PARSE
 		DOSCALL
 
 		or a
-		jr z, parse_noerrors$
-		ld l, a
-		ret
+		ret nz				; Returns A [error]
 
-	parse_noerrors$:
-		ld STRUCT_DRIVE(iy),c
+		ld STRUCT_DRIVE(iy), c
 		ld STRUCT_FLAGS(iy), b
 		ld STRUCT_TERMCHAR+0(iy), e
 		ld STRUCT_TERMCHAR+1(iy), d
 		ld STRUCT_LASTITEM+0(iy), l
 		ld STRUCT_LASTITEM+1(iy), h
-
-		ld l, #0
-		ret
+		ret					; Returns A [no error]
 	__endasm;
 }
-#endif
-
-#ifdef MSXDOS1
-ERR8 parse_pathname(char* str, PATH_parsed *info)
-{
-	//TODO
-	cputs("parse_pathname(): Not implemented!");
-	exit0();
-	return 0;
-}
-#endif

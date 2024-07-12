@@ -2,6 +2,9 @@
 #include <string.h>
 
 
+void dos2_explain(uint8_t error_code, char* buffer) __naked __sdcccall(1)
+{
+	error_code, buffer;
 /*
     EXPLAIN ERROR CODE (66H)
     Parameters:    C = 66H (_EXPLAIN) 
@@ -26,31 +29,13 @@ form: "System error 194" or "User error 45" will be returned, and register B
 will be unchanged. (System errors are those in the range 40h...FFh and user
 errors are 00h...3Fh.)
 */
-static void _explain(char* buffer, uint8_t error_code) __naked __sdcccall(0)
-{
-	error_code, buffer;
 	__asm
-		push ix
-		ld ix,#4
-		add ix,sp
-
-		ld e,0(ix)
-		ld d,1(ix)
-		ld b,2(ix)
-		pop ix
+		ld b,a			; b = error_code
+						; de = buffer
 
 		ld c,#EXPLAIN
 		DOSCALL
 
 		ret
 	__endasm;
-}
-
-void explain(char* buffer, uint8_t error_code)
-{
-	if (dosver() == VER_MSXDOS1x) {
-		strcpy(buffer, "Only DOS2");
-	} else {
-		_explain(buffer, error_code);
-	}
 }

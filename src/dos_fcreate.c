@@ -1,13 +1,9 @@
 #include "dos.h"
 
 
-FILEH fcreate(char *filename, char mode, char attributes) __naked __sdcccall(0)
+ERRB fcreate(char *filename) __naked __z88dk_fastcall
 {
 	filename;
-	mode;
-	attributes;
-
-#ifdef MSXDOS1
 /*
     CREATE FILE [FCB] (16H)
     Parameters:    C = 16H (_FMAKE)
@@ -32,88 +28,17 @@ In all cases the resulting file will be opened with the required extent number
 exactly as if an OPEN function call had been done.
 */
 	__asm
-		call    dos_initializeFCB
-
-		push ix                     ; Put filename in DE
-		ld   ix,#4
-		add  ix,sp
-		ld   e,0(ix)
-		ld   d,1(ix)
-		pop ix
-
+		push hl						; HL = Param filename
+		call dos_initializeFCB
+				
+		pop de						; Put filename pointer in DE
 		call dos_copyFilenameToFCB
 
-		ld   de,#SYSFCB
-		ld   c,#FMAKE               ; Call FOPEN Bios function
+		ld   de,#SYSFCB				; DE = Pointer to unopened FCB
+		ld   c,#FMAKE				; Call FOPEN Bios function
 		DOSCALL
 
-		ld h, #0
-		or a
-		ret z						; return no error
-		dec h
-		ret							; return error HL = $FFFF
+		inc l						; error = 0 | no error = 1
+		ret							; Returns L
 	__endasm;
-#endif
-
-#ifdef MSXDOS2
-/*
-    CREATE FILE HANDLE (44H)
-    Parameters:    C = 44H (_CREATE) 
-                  DE = Drive/path/file ASCIIZ string
-                   A = Open mode. b0 set => no write
-                                  b1 set => no read
-                                  b2 set => inheritable   
-                                  b3..b7   -  must be clear
-                   B = b0..b6 = Required attributes
-                           b7 = Create new flag
-    Results:       A = Error [IATTR, FILEX, DIRX, SYSX, FILRO, FOPEN, DRFUL, DKFUL]
-                   B = New file handle
-
-A file or sub-directory, as specified by the attributes in register B, will be
-created with the name and in the directory specified by the drive/path/file
-string. A ".IATTR" error is returned if register B specifies a volume name.
-
-An error will be returned if the file or sub-directory cannot be created. The
-error conditions in this case are the same as for the "find new entry" function
-(function 42h) with the main error codes being ".FILEX", ".DIRX", ".SYSX",
-".FILRO", ".FOPEN", ".DRFUL" and ".DKFUL". Like the "find new" function, if the
-"create new" flag (bit-7 of register B) is set then an existing file will not
-be deleted and will always return a ".FILEX" error.
-
-If the attributes byte specifies a sub-directory then the hidden bit may also
-be set to create a hidden sub-directory. For a file, the hidden, system or read
-only bits may be set to create a file with the appropriate attributes. An
-invalid attributes bits will simply be ignored. A file will always be created
-with the archive attribute bit set.
-
-A file will automatically be opened just as for the "open" function described
-above, and a file handle returned in register B. The "open mode" parameter is
-interpreted in the same way as for the "open" function. A sub-directory will
-not be opened (because this is meaningless) so register B will be returned as
-0FFh which can never be a valid file handle.
-*/
-	__asm
-		push ix
-		ld ix,#4
-		add ix,sp
-
-		ld e,0(ix)
-		ld d,1(ix)
-		ld a,2(ix)
-		ld b,3(ix)
-		pop ix
-
-		ld c, #CREATE
-		DOSCALL
-
-		ld  h, #0
-		ld  l, b
-		or  a
-		ret z						; return no error
-		dec h
-		ld  l, a
-		ret							; return error HL = $FFxx
-	__endasm;
-#endif
-
 }

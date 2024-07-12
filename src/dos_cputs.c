@@ -8,4 +8,4 @@ void cputs(char *str)
 	putchar('\n');
 }
 
-#endif
+#endif	//DISABLE_CONIO

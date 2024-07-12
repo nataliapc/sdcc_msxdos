@@ -2,16 +2,21 @@
 #include "dos.h"
 
 
-char* get_program_path(char *path)
+char* getProgramPath(char *path)
 {
-#ifdef MSXDOS2
-	if (get_env("PROGRAM", path, MAX_PATH)) {
-		return NULL;
+	switch (dosVersion()) {
+		case VER_MSXDOS1x:
+			strcpy(path, "A:\\");
+			path[0] = getCurrentDrive() + 'A';
+			break;
+		case VER_MSXDOS2x:
+		case VER_NextorDOS:
+			if (dos2_getEnv("PROGRAM", path, MAX_PATH_SIZE)) {
+				return NULL;
+			}
+			break;
+		default:
+			return NULL;
 	}
-#endif
-#ifdef MSXDOS1
-	strcpy(path, "A:\\");
-	path[0] = get_current_drive() + 'A';
-#endif
 	return path;
 }

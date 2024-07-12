@@ -1,7 +1,9 @@
 #include "dos.h"
 
 
-#ifdef MSXDOS2
+ERRB dos2_getEnv(char* name, char* buffer, uint8_t buffer_size) __naked __sdcccall(0)
+{
+	name, buffer, buffer_size;
 /*
     GET ENVIRONMENT ITEM (6BH)
     Parameters:    C = 6BH (_GENV)
@@ -20,9 +22,6 @@ value string will be truncated with no terminating null and a ".ELONG" error
 will be returned. A buffer 255 bytes will always be large enough since value
 strings cannot be longer than this (including the terminating null).
 */
-ERR8 get_env(char* name, char* buffer, uint8_t buffer_size) __naked __sdcccall(0)
-{
-	name, buffer, buffer_size;
 	__asm
 		push ix
 		ld ix,#4
@@ -41,4 +40,3 @@ ERR8 get_env(char* name, char* buffer, uint8_t buffer_size) __naked __sdcccall(0
 		ret
 	__endasm;
 }
-#endif

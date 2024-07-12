@@ -21,7 +21,15 @@
 	#endif
 #endif
 
-extern const uint8_t DOS_VER;
+typedef uint8_t  RETB;
+typedef uint16_t RETW;
+typedef int32_t  RETDW;
+typedef uint8_t  ERRB;
+typedef uint8_t  FILEH;
+#ifndef NULL
+	#define NULL 0
+#endif
+
 
 //=========================================================
 // Tools
@@ -31,21 +39,25 @@ extern const uint8_t DOS_VER;
                     call CALSLT
 #define EXTBIOCALL  call EXTBIO
 
-
-#define MAX_PATH 64
-#ifndef NULL
-	#define NULL     0
+#ifndef ADDR_POINTER_BYTE
+	#define ADDR_POINTER_BYTE(X)	(*((uint8_t*)X))
+#endif
+#ifndef ADDR_POINTER_WORD
+	#define ADDR_POINTER_WORD(X)	(*((uint16_t*)X))
 #endif
 
-#define FILEH	uint16_t
+#define MAX_PATH_SIZE	64
+#define MAX_HANDLERS	64
+
 
 /* SYSTEM vars */
-#if defined(MSXDOS1) || defined(CPM)
-	#define SYSFCB	0x005c	// File control block in the CP/M system area
-#endif
-#ifdef MSX2
-	#define EXPTBL  0xfcc1	// BIOS slot
-#endif
+// http://map.grauw.nl/resources/msxsystemvars.php
+// https://www.msx.org/wiki/System_variables_and_work_area
+#define SYSFCB	0x005c	// File control block in the CP/M system area
+#define EXPTBL  0xfcc1	// (BYTE) BIOS slot
+#define PUTPNT	0xf3f8	// (WORD) Address in the keyboard buffer where a character will be written
+#define GETPNT	0xf3fa	// (WORD) Address in the keyboard buffer where the next character is read
+
 
 /* DOS calls */
 // MSXDOS 1
@@ -121,11 +133,6 @@ extern const uint8_t DOS_VER;
 #define VER_MSXDOS2x    2
 #define VER_NextorDOS   3
 
-/* DOS errors */
-#define NOFIL   0xD7
-#define IATTR   0xCF
-#define DIRX    0xCC
-
 /* open/create flags */
 #define O_RDWR     0x00
 #define O_RDONLY   0x01
@@ -133,9 +140,9 @@ extern const uint8_t DOS_VER;
 #define O_INHERIT  0x04
 
 /* seek modes */
-#define SEEK_SET	0	//Beginning of file
-#define SEEK_CUR	1	//Current position of the file pointer
-#define SEEK_END	2	//End of file *
+#define SEEK_SET	0	// Beginning of file
+#define SEEK_CUR	1	// Current position of the file pointer
+#define SEEK_END	2	// End of file
 
 /* file attributes */
 #define ATTR_NONE      0		// None.
@@ -206,9 +213,6 @@ extern const uint8_t DOS_VER;
 #define ERR_IBDOS   0xdc	//Invalid MSX-DOS call: An MSX-DOS call was made with an illegal function number. Most illegal function calls return no error, but this error may be returned if a "get previous error code" function call is made.
 #define ERR_NORAM   0xde	//Not enough memory: MSX-DOS has run out of memory in its 16k kernel data segment. Try reducing the number of sector buffers or removing some environment strings. Also occurs if there are no free segments for creating the RAMdisk.
 #define ERR_INTER   0xdf	//Internal error: Should never occur.
-
-typedef uint16_t RE16;
-typedef uint8_t  ERR8;
 
 typedef struct {			// Off ID  Siz CP/M Function           MSXDOS Function
 	uint8_t  drvNum;		//  0 [DR] 1   Drive number containing the file (0:default drive, 1:A, 2:B, ..., 8:H)
@@ -284,28 +288,34 @@ typedef struct {
 	char     unused[4];		// +12-+15: Unused, always zero
 } CLUSTER_info;	// Used by GETCLUS function (Nextor only)
 
+typedef union {
+	uint16_t raw;
+	struct {
+		unsigned hours:   5;
+		unsigned minutes_up: 3;
+		unsigned minutes_down: 3;
+		unsigned seconds: 5;
+	} time;
+} timePacked_t;
+
+typedef union {
+	uint16_t raw;
+	struct {
+		unsigned year:  7;
+		unsigned month_up: 1;
+		unsigned month_down: 3;
+		unsigned day:   5;
+	} date;
+} datePacked_t;
+
 typedef struct {
 	uint8_t  magic;			// [1]   0 - Always 0xFF
 	char     filename[13];	// [13]  1 - Filename as an ASCIIZ string
 	uint8_t  attribs;		// [1]  14 - File attributes byte
-	union {					// [2]  15 - Time of last modification
-		struct {
-			unsigned hours:   5;
-			unsigned minutes: 6; 
-			unsigned seconds: 5;
-		};
-		uint16_t raw;
-	} modifTime;
-	union {					// [2]  17 - Date of last modification
-		struct {
-			unsigned year:  7;
-			unsigned month: 4;
-			unsigned day:   5;
-		};
-		uint16_t raw;
-	} modifDate;
-	uint16_t startCluster;	// [2]  19 - Start cluster
-	uint32_t fileSize;		// [4]  21 - File size
+	timePacked_t modifTime;	// [2]  15 - Time of last modification
+	datePacked_t modifDate;	// [2]  17 - Date of last modification
+	uint16_t startcluster;	// [2]  19 - Start cluster
+	uint32_t filesize;		// [4]  21 - File size
 	uint8_t  drive;			// [1]  25 - Logical drive
 	uint8_t  internal[38];	// [38] 26 - Internal information, must not be modified
 } FFBLK;
@@ -316,12 +326,12 @@ typedef struct {
 	uint8_t   attr;			// 0x00B [1]  File Attributes. Mask: 0x01:ReadOnly | 0x02:Hidden | 0x04:System | 0x08:Volume | 0x10:Directory | 0x20:Archive
 	uint8_t   unused1;		// 0x00C [1]  MSX-DOS 2: For a deleted file, the original first character of the filename
 	uint8_t   unused2;		// 0x00D [1]
-	uint16_t  ctime;		// 0x00E [2]  Create time: #0-4:Seconds/2 #5-10:Minuts #11-15:Hours
-	uint16_t  cdate;		// 0x010 [2]  Create date: #0-4:Day #5-8:Month #9-15:Year(0=1980)
+	timePacked_t ctime;		// 0x00E [2]  Create time: #0-4:Seconds/2 #5-10:Minuts #11-15:Hours
+	datePacked_t cdate;		// 0x010 [2]  Create date: #0-4:Day #5-8:Month #9-15:Year(0=1980)
 	uint16_t  unused3;		// 0x012 [2]
 	uint16_t  unused4;		// 0x014 [2]
-	uint16_t  mtime;		// 0x016 [2]  Last modified time: #0-4:Seconds/2 #5-10:Minuts #11-15:Hours
-	uint16_t  mdate;		// 0x018 [2]  Last modified date: #0-4:Day #5-8:Month #9-15:Year(0=1980)
+	timePacked_t mtime;		// 0x016 [2]  Last modified time: #0-4:Seconds/2 #5-10:Minuts #11-15:Hours
+	datePacked_t mdate;		// 0x018 [2]  Last modified date: #0-4:Day #5-8:Month #9-15:Year(0=1980)
 	uint16_t  cluini;		// 0x01A [2]  Initial cluster for this file
 	uint32_t  fsize;		// 0x01C [4]  File size in bytes
 } DIRENTRY;
@@ -331,19 +341,19 @@ typedef struct {			// Returned data by parse_pathname(...)
 	uint8_t   drive;		// Logical drive number (1=A: etc)
 	char     *lastItem;		// Pointer to start of last item
 	char     *termChar;		// Pointer to termination character
-//	union {					// Parse result flags
-		uint8_t flags;
-//		struct {
-//			unsigned moreThanDrive: 1;	// b0 - set if any characters parsed other than drive name
-//			unsigned anyDirectory:  1;	// b1 - set if any directory path specified
-//			unsigned anyDrive:      1;	// b2 - set if drive name specified
-//			unsigned anyFilename:   1;	// b3 - set if main filename specified in last item
-//			unsigned anyExtension:  1;	// b4 - set if filename extension specified in last item
-//			unsigned lastAmbiguous: 1;	// b5 - set if last item is ambiguous
-//			unsigned lastIsDot:     1;	// b6 - set if last item is "." or ".."
-//			unsigned lastIsDosDot:  1;	// b7 - set if last item is ".."
-//		} value;
-//	} flags;
+	union {					// Parse result flags
+		uint8_t raw;
+		struct {
+			unsigned moreThanDrive: 1;	// b0 - set if any characters parsed other than drive name
+			unsigned anyDirectory:  1;	// b1 - set if any directory path specified
+			unsigned anyDrive:      1;	// b2 - set if drive name specified
+			unsigned anyFilename:   1;	// b3 - set if main filename specified in last item
+			unsigned anyExtension:  1;	// b4 - set if filename extension specified in last item
+			unsigned lastAmbiguous: 1;	// b5 - set if last item is ambiguous
+			unsigned lastIsDot:     1;	// b6 - set if last item is "." or ".."
+			unsigned lastIsDosDot:  1;	// b7 - set if last item is ".."
+		} values;
+	} flags;
 } PATH_parsed;
 
 typedef struct {
@@ -354,64 +364,85 @@ typedef struct {
 
 #ifndef DISABLE_CONIO
 	#if __SDCC_VERSION_NUM < 40112
-		int  putchar(int c) __z88dk_fastcall;
+		int putchar(int c) __z88dk_fastcall;
 	#else
-		int  putchar(int c) __sdcccall(1);
+		int putchar(int c) __sdcccall(1);
 	#endif
 	int  getchar(void) __sdcccall(1);
 	int  cprintf(const char *format, ...);
 	void cputs(char *str);
-	int  kbhit(void);
+	bool kbhit(void);
+	bool kbhitBios(void) __sdcccall(1);
 #endif
 
-char  get_current_drive(void);
-char  get_current_directory(char drive, char *path);
-char* get_program_path(char *path);
-char  get_drive_params(char drive, DPARM_info *param);
+// MSX-DOS 1.x
+RETB  getCurrentDrive(void) __sdcccall(1);
+char* getProgramPath(char *path);
+ERRB  getDriveParams(char drive, DPARM_info *param) __sdcccall(1);
 
-FILEH fopen(char *filename, char mode) __sdcccall(0);
-FILEH fcreate(char *filename, char mode, char attributes) __sdcccall(0);
-FILEH fclose(char fh) __sdcccall(0);
-RE16 fread(char* buf, uint16_t size, char fh) __sdcccall(0);
-RE16 fwrite(char* buf, uint16_t size, char fh) __sdcccall(0);
-RE16 fputs(char* str, char fh);
-char* fgets(char* buf, uint16_t size, uint16_t fh);
-FILEH fflush(char fh);
-uint32_t fseek (char fh, uint32_t offset, char origin);
-uint32_t ftell(FILEH fh);
-uint32_t filesize(char *filename);
-ERR8 remove(char *filename) __sdcccall(0);
-bool fileexists(char* filename);
+ERRB  fopen(char *filename) __z88dk_fastcall;
+ERRB  fcreate(char *filename) __z88dk_fastcall;
+ERRB  fclose(void) __z88dk_fastcall;
+ERRB  remove(char *filename) __sdcccall(1);
+RETW  fread(char* buf, uint16_t size) __sdcccall(1);
+RETW  fwrite(char* buf, uint16_t size) __sdcccall(1);
+ERRB  fflush();
+RETW  fputs(char* str);
+char* fgets(char* buf, uint16_t size);
+RETDW fseek(uint32_t offset, char origin);
+RETDW ftell(void);
+RETDW filesize(char *filename);
+bool  fileexists(char* filename);
 
-uint8_t dosver(void) __sdcccall(0);
-ERR8 get_env(char* name, char* buffer, uint8_t buffer_size);
-ERR8 parse_pathname(char* str, PATH_parsed *info);
-void exit(uint8_t code) __sdcccall(0);
-void exit0(void);
-void explain(char* buffer, uint8_t error_code);
-void set_abort_routine(void *routine) __z88dk_fastcall;
+RETB dosVersion(void) __z88dk_fastcall;
+void exit(void);
 
-void set_transfer_address(void *memaddress) __sdcccall(0);
-ERR8 read_abs_sector(uint8_t drv, uint16_t startsec, uint8_t nsec);
-ERR8 write_abs_sector(uint8_t drv, uint16_t startsec, uint8_t nsec);
+void setTransferAddress(void *memaddress) __sdcccall(1);
+ERRB readAbsoluteSector(uint8_t drive, uint16_t startsec, uint8_t nsec);
+ERRB writeAbsoluteSector(uint8_t drive, uint16_t startsec, uint8_t nsec);
 
-// Nextor Only
-ERR8 get_drive_letter_info(char drive, DRIVE_info *info) __sdcccall(0);
-ERR8 get_FAT_cluster_info(char drive, uint16_t clusterNumber, CLUSTER_info *info) __sdcccall(0);
-ERR8 read_abs_sector_drv(uint8_t drv, uint32_t startsec, uint8_t nsec);
-ERR8 write_abs_sector_drv(uint8_t drv, uint32_t startsec, uint8_t nsec);
-RE16 set_drive_lock(uint8_t drive, uint8_t value);
-RE16 get_drive_lock(uint8_t drive);
-RE16 set_fast_out(uint8_t value);
-RE16 get_fast_out(void);
+// MSX-DOS 2.x
+ERRB dos2_getCurrentDirectory(char drive, char *path) __sdcccall(1);
+ERRB dos2_parsePathname(char* str, PATH_parsed *info) __sdcccall(1);
 
-// Memory mapper
-uint8_t mapperInit(void);
-uint8_t mapperGetSlot(void);
-uint8_t mapperGetTotalSegments(void);
-uint8_t mapperGetFreeSegments(void);
-ERR8    mapperAllocateSegment(MAPPER_Segment *returnedData) __z88dk_fastcall;
-ERR8    mapperFreeSegment(MAPPER_Segment *segmentToFree) __z88dk_fastcall;
-void    mapperSetSegment(uint8_t page, MAPPER_Segment *segment);
-uint8_t mapperGetCurrentSegment(uint8_t page);
-void    mapperSetOriginalSegmentBack(uint8_t page);
+FILEH dos2_fopen(char *filename, char mode) __sdcccall(0);
+FILEH dos2_fcreate(char *filename, char mode, char attributes) __sdcccall(0);
+FILEH dos2_fflush(FILEH fh) __sdcccall(1);
+ERRB  dos2_fclose(FILEH fh) __naked __sdcccall(1);
+ERRB  dos2_remove(char *filename) __sdcccall(1);
+RETW  dos2_fread(char* buf, uint16_t size, FILEH fh) __sdcccall(0);
+RETW  dos2_fwrite(char* buf, uint16_t size, FILEH fh) __sdcccall(0);
+RETW  dos2_fputs(char* str, FILEH fh);
+char* dos2_fgets(char* buf, uint16_t size, FILEH fh);
+RETDW dos2_fseek(FILEH fh, uint32_t offset, char origin) __sdcccall(0);
+RETDW dos2_ftell(FILEH fh);
+
+ERRB dos2_findfirst(const char *pathname, FFBLK *ffblk, uint8_t attrib) __sdcccall(0);
+ERRB dos2_findnext(FFBLK *ffblk ) __sdcccall(1);
+
+void dos2_setAbortRoutine(void *routine) __sdcccall(1);
+RETW dos2_getScreenSize(void) __sdcccall(1);
+ERRB dos2_getEnv(char* name, char* buffer, uint8_t buffer_size) __sdcccall(0);
+void dos2_explain(uint8_t error_code, char* buffer) __sdcccall(1);
+void dos2_exit(uint8_t code) __sdcccall(1);
+
+// NextorDOS Only
+RETB nxtr_setFastOut(uint8_t value);
+RETB nxtr_getFastOut(void);
+ERRB nxtr_getDriveLetterInfo(char drive, DRIVE_info *info) __sdcccall(1);
+ERRB nxtr_getClusterInfoFAT(char drive, uint16_t clusterNumber, CLUSTER_info *info) __sdcccall(0);
+ERRB nxtr_readAbsoluteSectorDrv(uint8_t drive, uint32_t startsec, uint8_t nsec);
+ERRB nxtr_writeAbsoluteSectorDrv(uint8_t drive, uint32_t startsec, uint8_t nsec);
+ERRB nxtr_set_drive_lock(uint8_t drive, uint8_t value);
+ERRB nxtr_get_drive_lock(uint8_t drive);
+
+// Memory mapper (MSX-DOS 2.x)
+RETB mapperInit(void);
+RETB mapperGetSlot(void);
+RETB mapperGetTotalSegments(void);
+RETB mapperGetFreeSegments(void);
+ERRB mapperAllocateSegment(MAPPER_Segment *returnedData) __sdcccall(1);
+ERRB mapperFreeSegment(MAPPER_Segment *segmentToFree) __z88dk_fastcall;
+void mapperSetSegment(uint8_t page, MAPPER_Segment *segment);
+RETB mapperGetCurrentSegment(uint8_t page);
+void mapperSetOriginalSegmentBack(uint8_t page);

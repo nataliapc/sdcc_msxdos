@@ -37,7 +37,7 @@ CRT = $(OBJDIR)crt0msx_msxdos_advanced.s.rel
 
 #DEBUG = -DDEBUG
 #--allow-undocumented-instructions
-DEFINES :=  -DMSXDOS1
+#DEFINES :=  -DCUSTOMDEFINE
 FULLOPT :=  --max-allocs-per-node 2000000
 CCFLAGS :=  --code-loc 0x0178 --data-loc 0 --no-std-crt0 \
 			--out-fmt-ihx --fomit-frame-pointer --opt-code-speed \
@@ -58,7 +58,7 @@ $(OBJDIR)%.c.rel: */%.c
 	$(ODIR_GUARD)
 	$(CC) -I$(INCDIR) $(CCFLAGS) -c -o $@ $^ ;
 
-$(LIBDIR)dos.lib: $(patsubst $(SRCDIR)%, $(OBJDIR)%.rel, $(wildcard $(SRCDIR)dos_*))
+$(LIBDIR)dos.lib: $(patsubst $(SRCDIR)%, $(OBJDIR)%.rel, $(wildcard $(SRCDIR)dos*_*))
 	@echo "$(COL_ORANGE)################ Compiling $@$(COL_RESET)"
 	$(LIBDIR_GUARD)
 	$(AR) $(LDFLAGS) $@ $^ ;

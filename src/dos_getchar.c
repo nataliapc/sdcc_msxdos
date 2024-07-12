@@ -9,20 +9,19 @@ int getchar(void) __naked __sdcccall(1)
     Parameters:    C = 08H (_INNOE)
     Results:     L=A = Input character
 
-    This function is identical to function 01h (_CONIN) except that the input 
-    character will not be echoed to the standard output. The same control 
-    character checks will be done. This function is not compatible with CP/M 
-    which uses this function number for "set I/O byte".
+This function is identical to function 01h (_CONIN) except that the input 
+character will not be echoed to the standard output. The same control 
+character checks will be done. This function is not compatible with CP/M 
+which uses this function number for "set I/O byte".
 */
-  __asm
+	__asm
+		ld c,#INNOE
+		DOSCALL
 
-    ld c,#INNOE
-    DOSCALL
-    ld d, #0x00
-    ld e, l
-
-    ret
-  __endasm;
+		ld d, #0x00		; Returns DE
+		ld e, l
+		ret
+	__endasm;
 }
 
-#endif
+#endif  //DISABLE_CONIO

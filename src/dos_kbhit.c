@@ -2,20 +2,8 @@
 
 #ifndef DISABLE_CONIO
 
-int kbhit(void) __naked
-{
-  __asm
-	push af
-	push bc
-
-	ld c,#CONST
-	DOSCALL
-	ld h,#0
-
-	pop bc
-	pop af
-	ret
-  __endasm;
+bool kbhit(void) {
+	return ADDR_POINTER_WORD(PUTPNT) != ADDR_POINTER_WORD(GETPNT);
 }
 
-#endif
+#endif	//DISABLE_CONIO

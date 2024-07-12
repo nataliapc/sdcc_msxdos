@@ -1,14 +1,7 @@
 #include "dos.h"
 
-#ifdef MSXDOS1
-	const uint8_t DOS_VER = 1;
-#endif
-#ifdef MSXDOS2
-	const uint8_t DOS_VER = 2;
-#endif
 
-
-uint8_t dosver(void) __naked __sdcccall(0)
+RETB dosVersion(void) __naked __z88dk_fastcall
 {
 /*
     GET MSX-DOS VERSION NUMBER (6FH)
@@ -37,36 +30,36 @@ the MSXDOS2.SYS version in register DE.
 	__asm
 		push ix
 
-		ld b,  #0x5A      ; magic numbers to detect Nextor
+		ld b,  #0x5A		; magic numbers to detect Nextor
 		ld hl, #0x1234
 		ld de, #0xABCD
 		ld ix, #0
 
 		ld c,#DOSVER
-		call 0xF37D       ; BDOS (upper memory DOSCALL)
+		call 0xF37D			; BDOS (upper memory DOSCALL)
 
 		or  a
 		jr  z,check_dos1$
-		ld  b,#0          ; unknown DOS
+		ld  b,#0			; unknown DOS
 		jr  ret_version$
 
 	check_dos1$:
-		ld  a,b           ; B<2 --> MSX-DOS 1
+		ld  a,b				; B<2 --> MSX-DOS 1
 		cp  #2
 		jr  nc,check_dos2nextor$
-		ld  b,#1          ; is MSX-DOS 1
+		ld  b,#1			; is MSX-DOS 1
 		jr  ret_version$
 
 	check_dos2nextor$:
-		push ix           ; Nextor: IXh must contain '1'
+		push ix				; Nextor: IXh must contain '1'
 		pop hl
 		ld  a,h
 		dec a
 		jr  z,is_nextor$
-		ld  b,#2          ; is MSXDOS 2
+		ld  b,#2			; is MSXDOS 2
 		jr  ret_version$
 	
-	is_nextor$:           ; is NextorDOS
+	is_nextor$:				; is NextorDOS
 		ld  b,#3
 
 	ret_version$:

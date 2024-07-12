@@ -39,7 +39,7 @@ const char* const AUTOEXEC_FILE = "autoexec.bat";
 const char* const CCC_FILE = "ccc.com";
 const char* const BAD_FILE = "file.bad";
 const char* const TEXT_CRLF = "this text\r\nhave carriage";
-const char* const TEXT_CRLF_15 = "this text\r\nhave";
+const char* const TEXT_CRLF_15 = "this text\r\n";
 
 extern void dos_initializeFCB();
 
@@ -47,7 +47,7 @@ extern void dos_initializeFCB();
 
 static void beforeAll()
 {
-	if (dosver() >= VER_MSXDOS2x) {
+	if (dosVersion() >= VER_MSXDOS2x) {
 		mapperInit();
 	}
 }
@@ -59,105 +59,100 @@ static void beforeEach()
 
 static void create_temp_file()
 {
-	FILEH fh = fcreate(TEMP_FILE, O_RDWR, ATTR_NONE);
-	fwrite(TEMP_FILE, strlen(TEMP_FILE), fh);
-	fflush(fh);
-	fclose(fh);
+	FILEH fh = fcreate(TEMP_FILE);
+	fwrite(TEMP_FILE, strlen(TEMP_FILE));
+	fflush();
+	fclose();
 }
 
 static void create_file(char *text)
 {
-	FILEH fh = fcreate(TEMP_FILE, O_RDWR, ATTR_NONE);
-	fwrite(text, strlen(text), fh);
-	fflush(fh);
-	fclose(fh);
+	FILEH fh = fcreate(TEMP_FILE);
+	fwrite(text, strlen(text));
+	fflush();
+	fclose();
 }
 
 
 // =============================================================================
 // TESTS
-// =============================================================================
 
 void test_getchar()
 {
 	const char *_func = __func__;
+	beforeEach();
 
 	//BDD given
-	beforeEach();
 	ADDR_POINTER_BYTE(ADDR_POINTER_WORD(PUTPNT)) = '#';
 	ADDR_POINTER_WORD(PUTPNT)++;
 
-//__asm out(0x18),a __endasm;
 	//BDD when
 	char result = getchar();
-//__asm out(0x18),a __endasm;
 
 	//BDD then
 	ASSERT_EQUAL(result, '#', ERROR);
 	SUCCEED();
 }
 
+void test_kbhit_TRUE()
+{
+	const char *_func = __func__;
+	beforeEach();
+
+	//BDD given
+	ADDR_POINTER_WORD(PUTPNT)++;
+
+	//BDD when
+	bool result = kbhit();
+
+	//BDD then
+	ASSERT_EQUAL(result, true, ERROR);
+	SUCCEED();
+}
+
+void test_kbhit_FALSE()
+{
+	const char *_func = __func__;
+	beforeEach();
+
+	//BDD given
+	ADDR_POINTER_WORD(PUTPNT) = ADDR_POINTER_WORD(GETPNT);
+
+	//BDD when
+	char result = kbhit();
+
+	//BDD then
+	ASSERT_EQUAL(result, false, ERROR);
+	SUCCEED();
+}
+
 void test_get_current_drive()
 {
 	const char *_func = __func__;
-
-	//BDD given
 	beforeEach();
 
+	//BDD given
+
 	//BDD when
-	uint8_t drive = get_current_drive();
+	RETB drive = getCurrentDrive();
 
 	//BDD then
 	ASSERT_EQUAL(drive, 0, ERROR);
 	SUCCEED();
 }
 
-void test_get_current_directory()
-{
-	const char *_func = __func__;
-
-	//BDD given
-	beforeEach();
-	char drive = get_current_drive();
-
-	//BDD when
-	char result = get_current_directory(drive, heap_top);
-
-	//BDD then
-	ASSERT(strcmp(heap_top, "")==0, ERROR);
-	ASSERT_EQUAL(result, 0, ERROR);
-	SUCCEED();
-}
-
-void test_get_current_directory_FAILS()
-{
-	const char *_func = __func__;
-
-	//BDD given
-	beforeEach();
-	char drive = 8;
-
-	//BDD when
-	char result = get_current_directory(drive, heap_top);
-
-	//BDD then
-	ASSERT(strcmp(heap_top, "")==0, ERROR);
-	ASSERT_EQUAL(result, ERR_IDRV, ERROR);
-	SUCCEED();
-}
-
 void test_get_program_path()
 {
 	const char *_func = __func__;
-
-	//BDD given
 	beforeEach();
 
+	//BDD given
+
 	//BDD when
-	char *result = get_program_path(heap_top);
+	char *result = getProgramPath(heap_top);
 
 	//BDD then
-	ASSERT(strcmp(heap_top, "A:\\")==0, ERROR);
+	ASSERT(strcmp(heap_top, "A:\\TESTDOS1.COM")==0, ERROR);
 	ASSERT_EQUAL(result, heap_top, ERROR);
 	SUCCEED();
 }
@@ -165,22 +160,24 @@ void test_get_program_path()
 void test_get_drive_params()
 {
 	const char *_func = __func__;
+	beforeEach();
 
 	//BDD given
-	beforeEach();
-	char drive = get_current_drive();
-	*(heap_top) = 0xFF;
+	memset(heap_top, 0, sizeof(DPARM_info));
+	DPARM_info *info = (DPARM_info*)heap_top;
+	char drive = getCurrentDrive();
 
 	//BDD when
-	char result = get_drive_params(drive, (DPARM_info*)heap_top);
+	ERRB result = getDriveParams(drive, info);
 
 	//BDD then
-	if (DOS_VER == 1) {
+	if (dosVersion() == VER_MSXDOS1x) {
 		ASSERT_EQUAL(result, ERR_IBDOS, ERROR);
-	}
-	if (DOS_VER == 2) {
+	} else {
 		ASSERT_EQUAL(result, 0, ERROR);
-		ASSERT_EQUAL(*heap_top, 0, ERROR);
+		ASSERT_EQUAL(info->drvnum, 1, ERROR);
+		ASSERT_EQUAL(info->secSize, 512, ERROR);
+		ASSERT_EQUAL(info->numFats, 2, ERROR);
 	}
 	SUCCEED();
 }
@@ -188,32 +185,38 @@ void test_get_drive_params()
 void test_get_drive_params_FAILS()
 {
 	const char *_func = __func__;
+	beforeEach();
 
 	//BDD given
-	beforeEach();
+	memset(heap_top, 0, sizeof(DPARM_info));
+	DPARM_info *info = (DPARM_info*)heap_top;
 	char drive = 9;
 
 	//BDD when
-	char result = get_drive_params(drive, (DPARM_info*)heap_top);
+	ERRB result = getDriveParams(drive, info);
 
 	//BDD then
-	ASSERT_EQUAL(result, ERR_IBDOS, ERROR);
+	if (dosVersion() == VER_MSXDOS1x) {
+		ASSERT_EQUAL(result, ERR_IBDOS, ERROR);
+	} else {
+		ASSERT_EQUAL(result, ERR_IDRV, ERROR);
+	}
 	SUCCEED();
 }
 
 void test_fopen()
 {
 	const char *_func = __func__;
+	beforeEach();
 
 	//BDD given
-	beforeEach();
 	create_temp_file();
 
 	//BDD when
-	FILEH fh = fopen(TEMP_FILE, O_RDONLY);
+	ERRB result = fopen(TEMP_FILE);
 
 	//BDD then
-	ASSERT_EQUAL(fh & 0xff, 0, ERROR);
+	ASSERT_EQUAL(result, 0, ERROR);
 	SUCCEED();
 }
 
@@ -226,24 +229,24 @@ void test_fopen_FAILS()
 	remove(NO_FILE);
 
 	//BDD when
-	FILEH fh = fopen(NO_FILE, O_RDONLY);
+	ERRB result = fopen(NO_FILE);
 
 	//BDD then
-	ASSERT_EQUAL(fh, 0xff00|ERR_NOFIL, ERROR);
+	ASSERT_EQUAL(result, ERR_NOFIL, ERROR);
 	SUCCEED();
 }
 
 void test_fclose()
 {
 	const char *_func = __func__;
+	beforeEach();
 
 	//BDD given
-	beforeEach();
 	create_temp_file();
 
 	//BDD when
-	FILEH fh = fopen(TEMP_FILE, O_RDONLY);
-	uint16_t result = fclose(fh);
+	fopen(TEMP_FILE);
+	ERRB result = fclose();
 
 	//BDD then
 	ASSERT_EQUAL(result, 0, ERROR);
@@ -258,26 +261,26 @@ void test_fclose_FAILS()
 	//BDD given
 
 	//BDD when
-	uint16_t result = fclose(255);
+	ERRB result = fclose();
 
 	//BDD then
-	ASSERT_EQUAL(result, 0xffff, ERROR);
+	ASSERT_EQUAL(result, 0xff, ERROR);
 	SUCCEED();
 }
 
 void test_fcreate()
 {
 	const char *_func = __func__;
+	beforeEach();
 
 	//BDD given
-	beforeEach();
 	remove(TEMP_FILE);
 
 	//BDD when
-	FILEH fh = fcreate(TEMP_FILE, O_RDONLY, ATTR_NONE);
+	ERRB result = fcreate(TEMP_FILE);
 
 	//BDD then
-	ASSERT_EQUAL(fh & 0xff, 0, ERROR);
+	ASSERT_EQUAL(result, 1, ERROR);
 	SUCCEED();
 }
 
@@ -290,26 +293,26 @@ void test_fcreate_FAILS()
 	create_temp_file();
 
 	//BDD when
-	FILEH fh = fcreate(TEMP_FILE, O_RDONLY, ATTR_NONE);
+	ERRB result = fcreate(TEMP_FILE);
 
 	//BDD then
-	ASSERT(fh < 0xff00, ERROR);
+	ASSERT_EQUAL(result, 1, ERROR);
 	SUCCEED();
 }
 
 void test_remove()
 {
 	const char *_func = __func__;
+	beforeEach();
 
 	//BDD given
-	beforeEach();
 	create_temp_file();
 
 	//BDD when
-	uint8_t result = remove(TEMP_FILE);
+	ERRB result = remove(TEMP_FILE);
 
 	//BDD then
-	ASSERT_EQUAL(result, 0, ERROR);
+	ASSERT_EQUAL(result, 1, ERROR);
 	SUCCEED();
 }
 
@@ -321,29 +324,48 @@ void test_remove_FAILS()
 	//BDD given
 
 	//BDD when
-	uint8_t result = remove(NO_FILE);
+	ERRB result = remove(NO_FILE);
 
 	//BDD then
-	ASSERT(result != 0, ERROR);
+	ASSERT_EQUAL(result, 0, ERROR);
 	SUCCEED();
 }
 
 void test_fread()
 {
 	const char *_func = __func__;
+	beforeEach();
 
 	//BDD given
-	beforeEach();
 	create_temp_file();
 
 	//BDD when
-	FILEH fh = fopen(TEMP_FILE, O_RDONLY);
-	uint16_t result = fread(heap_top, strlen(TEMP_FILE), fh);
-	fclose(fh);
+	fopen(TEMP_FILE);
+	RETW result = fread(heap_top, strlen(TEMP_FILE));
+	fclose();
 
 	//BDD then
 	ASSERT_EQUAL(strncmp(TEMP_FILE, heap_top, strlen(TEMP_FILE)), 0, ERROR);
 	ASSERT_EQUAL(result, strlen(TEMP_FILE), ERROR);
+	SUCCEED();
+}
+
+void test_fread_EOF()
+{
+	const char *_func = __func__;
+	beforeEach();
+
+	//BDD given
+	create_temp_file();
+
+	//BDD when
+	fopen(TEMP_FILE);
+	RETW result = fread(heap_top, strlen(TEMP_FILE)+2);
+	fclose();
+
+	//BDD then
+	ASSERT_EQUAL(strncmp(TEMP_FILE, heap_top, strlen(TEMP_FILE)), 0, ERROR);
+	ASSERT_EQUAL(result, 0xffc7, ERROR);
 	SUCCEED();
 }
 
@@ -355,25 +377,25 @@ void test_fread_FAILS()
 	//BDD given
 
 	//BDD when
-	uint16_t result = fread(heap_top, strlen(TEMP_FILE), 10);
+	RETW result = fread(heap_top, strlen(TEMP_FILE));
 
 	//BDD then
-	ASSERT(result >= 0xff00, ERROR);
+	ASSERT_EQUAL(result, 0xffc7, ERROR);
 	SUCCEED();
 }
 
 void test_fwrite()
 {
 	const char *_func = __func__;
+	beforeEach();
 
 	//BDD given
-	beforeEach();
 	remove(TEMP_FILE);
 
 	//BDD when
-	FILEH fh = fcreate(TEMP_FILE, O_WRONLY, ATTR_NONE);
-	uint16_t result = fwrite(TEMP_FILE, strlen(TEMP_FILE), fh);
-	fclose(fh);
+	FILEH fh = fcreate(TEMP_FILE);
+	RETW result = fwrite(TEMP_FILE, strlen(TEMP_FILE));
+	fclose();
 
 	//BDD then
 	ASSERT_EQUAL(result, filesize(TEMP_FILE), ERROR);
@@ -388,25 +410,25 @@ void test_fwrite_FAILS()
 	//BDD given
 
 	//BDD when
-	uint16_t result = fwrite(heap_top, 10, 5);
+	RETW result = fwrite(heap_top, 10);
 
 	//BDD then
-	ASSERT(result >= 0xff00, ERROR);
+	ASSERT_EQUAL(result, 0xffff, ERROR);
 	SUCCEED();
 }
 
 void test_fputs()
 {
 	const char *_func = __func__;
+	beforeEach();
 
 	//BDD given
-	beforeEach();
 	remove(TEMP_FILE);
 
 	//BDD when
-	FILEH fh = fcreate(TEMP_FILE, O_WRONLY, ATTR_NONE);
-	uint16_t result = fputs(TEMP_FILE, fh);
-	fclose(fh);
+	fcreate(TEMP_FILE);
+	RETW result = fputs(TEMP_FILE);
+	fclose();
 
 	//BDD then
 	ASSERT_EQUAL(result, filesize(TEMP_FILE), ERROR);
@@ -421,26 +443,26 @@ void test_fputs_FAILS()
 	//BDD given
 
 	//BDD when
-	uint16_t result = fputs(TEMP_FILE, 5);
+	RETW result = fputs(TEMP_FILE);
 
 	//BDD then
-	ASSERT(result >= 0xff00, ERROR);
+	ASSERT_EQUAL(result, 0xffff, ERROR);
 	SUCCEED();
 }
 
 void test_fgets()
 {
 	const char *_func = __func__;
+	beforeEach();
 
 	//BDD given
-	beforeEach();
 	create_temp_file();
 	memset(heap_top, 0, 100);
 
 	//BDD when
-	FILEH fh = fopen(TEMP_FILE, O_RDONLY);
-	char *result = fgets(heap_top, strlen(TEMP_FILE)+1, fh); //gets the content + '\0'
-	fclose(fh);
+	fopen(TEMP_FILE);
+	char *result = fgets(heap_top, strlen(TEMP_FILE)+1); //gets the content + '\0'
+	fclose();
 
 	//BDD then
 	ASSERT_EQUAL(result, heap_top, ERROR);
@@ -453,20 +475,20 @@ void test_fgets()
 void test_fgets_CRLF()
 {
 	const char *_func = __func__;
+	beforeEach();
 
 	//BDD given
-	beforeEach();
 	create_file(TEXT_CRLF);
 	memset(heap_top, 0, 100);
 
 	//BDD when
-	FILEH fh = fopen(TEMP_FILE, O_RDONLY);
-	char *result = fgets(heap_top, 16, fh);
-	fclose(fh);
+	fopen(TEMP_FILE);
+	char *result = fgets(heap_top, 16);
+	fclose();
 
 	//BDD then
 	ASSERT_EQUAL(result, heap_top, ERROR);
-	ASSERT_EQUAL(strlen(heap_top), 15, ERROR);
+	ASSERT_EQUAL(strlen(heap_top), 11, ERROR);
 	ASSERT_EQUAL(strcmp(heap_top, TEXT_CRLF_15), 0, ERROR);
 	ASSERT_EQUAL(strcmp(result, TEXT_CRLF_15), 0, ERROR);
 	SUCCEED();
@@ -480,27 +502,27 @@ void test_fgets_FAILS()
 	//BDD given
 
 	//BDD when
-	char *result = fgets(heap_top, 100, 5);
+	char *result = fgets(heap_top, 100);
 
 	//BDD then
-	ASSERT_EQUAL(result, 0, ERROR);
+	ASSERT_EQUAL(result, heap_top, ERROR);
 	SUCCEED();
 }
 
 void test_fseek_SET()
 {
 	const char *_func = __func__;
+	beforeEach();
 
 	//BDD given
-	beforeEach();
 	memcpy(heap_top, '\0', 13);
 	create_temp_file();
 
 	//BDD when
-	FILEH fh = fopen(TEMP_FILE, O_RDWR);
-	uint16_t result = fseek(fh, 5, SEEK_SET);
-	fread(heap_top, 13, fh);
-	fclose(fh);
+	fopen(TEMP_FILE);
+	int32_t result = fseek(5, SEEK_SET);
+	fread(heap_top, 13);
+	fclose();
 
 	//BDD then
 	ASSERT_EQUAL(strcmp(heap_top, "tmp"), 0, ERROR);
@@ -511,18 +533,18 @@ void test_fseek_SET()
 void test_fseek_CUR()
 {
 	const char *_func = __func__;
+	beforeEach();
 
 	//BDD given
-	beforeEach();
 	memcpy(heap_top, '\0', 13);
 	create_temp_file();
 
 	//BDD when
-	FILEH fh = fopen(TEMP_FILE, O_RDWR);
-	fread(heap_top, 2, fh);
-	uint16_t result = fseek(fh, 3, SEEK_CUR);
-	fread(heap_top, 13, fh);
-	fclose(fh);
+	fopen(TEMP_FILE);
+	fread(heap_top, 2);
+	int32_t result = fseek(3, SEEK_CUR);
+	fread(heap_top, 13);
+	fclose();
 
 	//BDD then
 	ASSERT_EQUAL(strcmp(heap_top, "tmp"), 0, ERROR);
@@ -533,17 +555,17 @@ void test_fseek_CUR()
 void test_fseek_END()
 {
 	const char *_func = __func__;
+	beforeEach();
 
 	//BDD given
-	beforeEach();
 	memcpy(heap_top, '\0', 13);
 	create_temp_file();
 
 	//BDD when
-	FILEH fh = fopen(TEMP_FILE, O_RDWR);
-	uint16_t result = fseek(fh, 3, SEEK_END);
-	fread(heap_top, 13, fh);
-	fclose(fh);
+	fopen(TEMP_FILE);
+	int32_t result = fseek(3, SEEK_END);
+	fread(heap_top, 13);
+	fclose();
 
 	//BDD then
 	ASSERT_EQUAL(strcmp(heap_top, "tmp"), 0, ERROR);
@@ -554,44 +576,39 @@ void test_fseek_END()
 void test_fseek_FAILS()
 {
 	const char *_func = __func__;
+	beforeEach();
 
 	//BDD given
-	beforeEach();
 	create_temp_file();
 
 	//BDD when
-	FILEH fh = 10;
-	uint16_t result1 = fseek(fh, 3, SEEK_SET);
+	int32_t result1 = fseek(3, SEEK_SET);
 
-	fh = fopen(TEMP_FILE, O_RDWR);
-	uint16_t result2 = fseek(fh, 3, 0xff);
-	fclose(fh);
+	fopen(TEMP_FILE);
+	int32_t result2 = fseek(3, 0xff);
+	fclose();
 
 	//BDD then
-	if (dosver() == VER_MSXDOS1x) {
-		ASSERT_EQUAL(result1, 0xffff, ERROR);
-	} else {
-		ASSERT_EQUAL(result1, 3, ERROR);
-	}
-	ASSERT_EQUAL(result2, 0xff00|ERR_INTER, ERROR);
+	ASSERT_EQUAL(result1, 3, ERROR);
+	ASSERT_EQUAL(result2, -1, ERROR);
 	SUCCEED();
 }
 
 void test_fflush()
 {
 	const char *_func = __func__;
+	beforeEach();
 
 	//BDD given
-	beforeEach();
 	create_temp_file();
 
 	//BDD when
-	FILEH fh = fopen(TEMP_FILE, O_RDWR);
-	fseek(fh, 0, SEEK_END);
-	fwrite(heap_top, 10, fh);
-	fflush(fh);
+	fopen(TEMP_FILE);
+	fseek(0, SEEK_END);
+	fwrite(heap_top, 10);
+	fflush();
 	uint32_t result = filesize(TEMP_FILE);
-	fclose(fh);
+	fclose();
 
 	//BDD then
 	ASSERT_EQUAL(result, strlen(TEMP_FILE)+10, ERROR);
@@ -601,9 +618,9 @@ void test_fflush()
 void test_filesize()
 {
 	const char *_func = __func__;
+	beforeEach();
 
 	//BDD given
-	beforeEach();
 
 	//BDD when
 	uint16_t result = filesize(CCC_FILE);
@@ -616,24 +633,24 @@ void test_filesize()
 void test_filesize_FAILS()
 {
 	const char *_func = __func__;
-
-	//BDD given
 	beforeEach();
 
+	//BDD given
+
 	//BDD when
-	uint16_t result = filesize(BAD_FILE);
+	uint32_t result = filesize(BAD_FILE);
 
 	//BDD then
-	ASSERT_EQUAL(result, 0xff00 | ERR_NOFIL, ERROR);
+	ASSERT_EQUAL(result, -1, ERROR);
 	SUCCEED();
 }
 
 void test_fileexists()
 {
 	const char *_func = __func__;
+	beforeEach();
 
 	//BDD given
-	beforeEach();
 
 	//BDD when
 	bool result = fileexists(AUTOEXEC_FILE);
@@ -646,9 +663,9 @@ void test_fileexists()
 void test_fileexists_FAILS()
 {
 	const char *_func = __func__;
+	beforeEach();
 
 	//BDD given
-	beforeEach();
 
 	//BDD when
 	bool result = fileexists(BAD_FILE);
@@ -658,109 +675,32 @@ void test_fileexists_FAILS()
 	SUCCEED();
 }
 
-void test_dosver()
+void test_dosversion()
 {
 	const char *_func = __func__;
+	beforeEach();
 
 	//BDD given
-	beforeEach();
 
 	//BDD when
-	uint8_t result = dosver();
+	uint8_t result = dosVersion();
 
 	//BDD then
-	ASSERT_EQUAL(result, VER_MSXDOS1x, ERROR);
-	SUCCEED();
-}
-
-void test_parse_pathname()
-{
-	const char *_func = __func__;
-
-	beforeEach();
-	uint8_t result;
-	PATH_parsed info;
-
-	const char *PATH_TEST1 = "b:\\dir1\\dir2\\file1 param1";
-	const char *PATH_TEST2 = "a:\\dir1\\";
-	const char *PATH_TEST3 = "\\dir1\\file1 param1";
-
-	//Test 1
-	result = parse_pathname(PATH_TEST1, &info);
-	ASSERT_EQUAL(result, 0, ERROR);
-	ASSERT_EQUAL(info.drive, 2, ERROR);
-	ASSERT_EQUAL(info.termChar-PATH_TEST1, 18, ERROR);
-	ASSERT_EQUAL(info.lastItem-PATH_TEST1, 13, ERROR);
-
-	//Test 2
-	result = parse_pathname(PATH_TEST2, &info);
-	ASSERT_EQUAL(result, 0, ERROR);
-	ASSERT_EQUAL(info.drive, 1, ERROR);
-	ASSERT_EQUAL(info.termChar-PATH_TEST2, 8, ERROR);
-	ASSERT_EQUAL(info.lastItem-PATH_TEST2, 8, ERROR);
-
-	//Test 3
-	result = parse_pathname(PATH_TEST3, &info);
-	ASSERT_EQUAL(result, 0, ERROR);
-	ASSERT_EQUAL(info.drive, 1, ERROR);
-	ASSERT_EQUAL(info.termChar-PATH_TEST3, 11, ERROR);
-	ASSERT_EQUAL(info.lastItem-PATH_TEST3, 6, ERROR);
-
-	//BDD then
-	SUCCEED();
-}
-
-void test_get_env()
-{
-	const char *_func = __func__;
-
-	//BDD given
-	beforeEach();
-
-	//BDD when
-
-	//BDD then
-	SUCCEED();
-}
-
-void test_explain()
-{
-	const char *_func = __func__;
-
-	//BDD given
-	beforeEach();
-	memset(heap_top, 0, 100);
-
-	//BDD when
-	if (dosver() == VER_MSXDOS1x) {
-		explain(heap_top, ERR_NOFIL);
-		ASSERT_EQUAL(strcmp(heap_top, "Only DOS2"), 0, ERROR);
-	} else {
-		explain(heap_top, ERR_ISBFN);
-		ASSERT_EQUAL(strcmp(heap_top, "Invalid sub-function number"), 0, ERROR);
-		explain(heap_top, ERR_NOFIL);
-		ASSERT_EQUAL(strcmp(heap_top, "File not found"), 0, ERROR);
-		explain(heap_top, ERR_NORAM);
-		ASSERT_EQUAL(strcmp(heap_top, "Not enough memory"), 0, ERROR);
-		explain(heap_top, ERR_INTER);
-		ASSERT_EQUAL(strcmp(heap_top, "Internal error"), 0, ERROR);
-	}
-
-	//BDD then
+	ASSERT_EQUAL(result, VER_MSXDOS2x, ERROR);
 	SUCCEED();
 }
 
 void test_set_transfer_address()
 {
 	const char *_func = __func__;
+	beforeEach();
 
 	//BDD given
-	beforeEach();
 	memset(heap_top, 0, 100);
-	FILEH fh = fopen(TEMP_FILE, O_RDONLY);
+	fopen(TEMP_FILE);
 
 	//BDD when
-	set_transfer_address(heap_top);
+	setTransferAddress(heap_top);
 	__asm
 		push hl
 		push de
@@ -773,7 +713,7 @@ void test_set_transfer_address()
 		pop de
 		pop hl
 	__endasm;
-	fclose(fh);
+	fclose();
 
 	//BDD then
 	ASSERT_EQUAL(strcmp(heap_top, TEMP_FILE), 0, ERROR);
@@ -783,14 +723,14 @@ void test_set_transfer_address()
 void test_read_abs_sector()
 {
 	const char *_func = __func__;
+	beforeEach();
 
 	//BDD given
-	beforeEach();
 	memset(heap_top, 0, 512);
-	set_transfer_address(heap_top);
+	setTransferAddress(heap_top);
 
 	//BDD when
-	uint8_t result = read_abs_sector(0, 0, 1);
+	uint8_t result = readAbsoluteSector(0, 0, 1);
 
 	//BDD then
 	ASSERT_EQUAL(result, 0, ERROR);
@@ -798,12 +738,28 @@ void test_read_abs_sector()
 	SUCCEED();
 }
 
+void test_read_abs_sector_IDRV()
+{
+	const char *_func = __func__;
+	beforeEach();
+
+	//BDD given
+	setTransferAddress(heap_top);
+
+	//BDD when
+	uint8_t result = readAbsoluteSector(10, 0, 1);
+
+	//BDD then
+	ASSERT_EQUAL(result, ERR_IDRV, ERROR);
+	SUCCEED();
+}
+
 void test_mapperGetTotalSegments()
 {
 	const char *_func = __func__;
+	beforeEach();
 
 	//BDD given
-	beforeEach();
 
 	//BDD when
 	uint8_t result = mapperGetTotalSegments();
@@ -816,9 +772,9 @@ void test_mapperGetTotalSegments()
 void test_mapperGetFreeSegments()
 {
 	const char *_func = __func__;
+	beforeEach();
 
 	//BDD given
-	beforeEach();
 
 	//BDD when
 	uint8_t result = mapperGetFreeSegments();
@@ -831,9 +787,9 @@ void test_mapperGetFreeSegments()
 void test_mapperGetCurrentSegmentInPage()
 {
 	const char *_func = __func__;
+	beforeEach();
 
 	//BDD given
-	beforeEach();
 
 	//BDD when
 	uint8_t result0 = mapperGetCurrentSegment(0);
@@ -849,17 +805,603 @@ void test_mapperGetCurrentSegmentInPage()
 	SUCCEED();
 }
 
-void test_ram_mapper()
+// =============================================================================
+// TESTS DOS2
+
+void test_dos2_get_env()
 {
 	const char *_func = __func__;
-	if (dosver() == VER_MSXDOS1x) {
+	beforeEach();
+
+	//BDD given
+
+	//BDD when
+	ERRB result = dos2_getEnv("SHELL", heap_top, 255);
+
+	//BDD then
+	ASSERT_EQUAL(result, 0, ERROR);
+	ASSERT_EQUAL(strcmp(heap_top, "A:\\COMMAND2.COM"), 0, ERROR);
+	SUCCEED();
+}
+
+void test_dos2_get_env_ELONG()
+{
+	const char *_func = __func__;
+	beforeEach();
+
+	//BDD given
+
+	//BDD when
+	ERRB result = dos2_getEnv("SHELL", heap_top, 256);
+
+	//BDD then
+	ASSERT_EQUAL(result, ERR_ELONG, ERROR);
+	SUCCEED();
+}
+
+void test_dos2_get_env_EMPTY()
+{
+	const char *_func = __func__;
+	beforeEach();
+
+	//BDD given
+
+	//BDD when
+	ERRB result = dos2_getEnv("EMPTY", heap_top, 200);
+
+	//BDD then
+	ASSERT_EQUAL(result, 0, ERROR);
+	ASSERT_EQUAL(strcmp(heap_top, ""), 0, ERROR);
+	SUCCEED();
+}
+
+void test_dos2_fopen()
+{
+	const char *_func = __func__;
+	beforeEach();
+
+	//BDD given
+	create_temp_file();
+
+	//BDD when
+	FILEH fh = dos2_fopen(TEMP_FILE, O_RDWR);
+	dos2_fclose(fh);
+
+	//BDD then
+	ASSERT(fh < MAX_HANDLERS, ERROR);
+	SUCCEED();
+}
+
+void test_dos2_fopen_FAILS()
+{
+	const char *_func = __func__;
+	beforeEach();
+
+	//BDD given
+	dos2_remove(NO_FILE);
+
+	//BDD when
+	FILEH fh = dos2_fopen(NO_FILE, O_RDONLY);
+
+	//BDD then
+	ASSERT_EQUAL(fh, ERR_NOFIL, ERROR);
+	SUCCEED();
+}
+
+void test_dos2_fclose()
+{
+	const char *_func = __func__;
+	beforeEach();
+
+	//BDD given
+	create_temp_file();
+
+	//BDD when
+	FILEH fh = dos2_fopen(TEMP_FILE, O_RDONLY);
+	ERRB result = dos2_fclose(fh);
+
+	//BDD then
+	ASSERT_EQUAL(result, 0, ERROR);
+	SUCCEED();
+}
+
+void test_dos2_fclose_FAILS()
+{
+	const char *_func = __func__;
+	beforeEach();
+
+	//BDD given
+
+	//BDD when
+	ERRB result1 = dos2_fclose(10);
+	ERRB result2 = dos2_fclose(MAX_HANDLERS);
+
+	//BDD then
+	ASSERT_EQUAL(result1, ERR_NOPEN, ERROR);
+	ASSERT_EQUAL(result2, ERR_IHAND, ERROR);
+	SUCCEED();
+}
+
+void test_dos2_fcreate()
+{
+	const char *_func = __func__;
+	beforeEach();
+
+	//BDD given
+	dos2_remove(TEMP_FILE);
+
+	//BDD when
+	FILEH fh = dos2_fcreate(TEMP_FILE, O_RDWR, ATTR_NONE);
+	dos2_fclose(fh);
+
+	//BDD then
+	ASSERT(fh < MAX_HANDLERS, ERROR);
+	SUCCEED();
+}
+
+void test_dos2_fcreate_FAILS()
+{
+	const char *_func = __func__;
+	beforeEach();
+
+	//BDD given
+	create_temp_file();
+
+	//BDD when
+	FILEH fh = dos2_fcreate(TEMP_FILE, O_RDONLY, ATTR_NONE);
+
+	//BDD then
+	ASSERT_EQUAL(fh, ERR_FILEX, ERROR);
+	SUCCEED();
+}
+
+void test_dos2_remove()
+{
+	const char *_func = __func__;
+	beforeEach();
+
+	//BDD given
+	create_temp_file();
+
+	//BDD when
+	ERRB result = dos2_remove(TEMP_FILE);
+
+	//BDD then
+	ASSERT_EQUAL(result, 0, ERROR);
+	SUCCEED();
+}
+
+void test_dos2_remove_FAILS()
+{
+	const char *_func = __func__;
+	beforeEach();
+
+	//BDD given
+
+	//BDD when
+	ERRB result = dos2_remove(NO_FILE);
+
+	//BDD then
+	ASSERT_EQUAL(result, ERR_NOFIL, ERROR);
+	SUCCEED();
+}
+
+void test_dos2_fread()
+{
+	const char *_func = __func__;
+	beforeEach();
+
+	//BDD given
+	create_temp_file();
+
+	//BDD when
+	FILEH fh = dos2_fopen(TEMP_FILE, O_RDWR);
+	RETW result = dos2_fread(heap_top, strlen(TEMP_FILE), fh);
+	dos2_fclose(fh);
+
+	//BDD then
+	ASSERT_EQUAL(strncmp(TEMP_FILE, heap_top, strlen(TEMP_FILE)), 0, ERROR);
+	ASSERT_EQUAL(result, strlen(TEMP_FILE), ERROR);
+	SUCCEED();
+}
+
+void test_dos2_fread_FAILS()
+{
+	const char *_func = __func__;
+	beforeEach();
+
+	//BDD given
+
+	//BDD when
+	RETW result = dos2_fread(heap_top, strlen(TEMP_FILE), 10);
+
+	//BDD then
+	ASSERT_EQUAL(result, 0xff00|ERR_NOPEN, ERROR);
+	SUCCEED();
+}
+
+void test_dos2_fwrite()
+{
+	const char *_func = __func__;
+	beforeEach();
+
+	//BDD given
+	dos2_remove(TEMP_FILE);
+
+	//BDD when
+	FILEH fh = dos2_fcreate(TEMP_FILE, O_RDWR, ATTR_NONE);
+	RETW result = dos2_fwrite(TEMP_FILE, strlen(TEMP_FILE), fh);
+	dos2_fclose(fh);
+
+	//BDD then
+	ASSERT_EQUAL(result, filesize(TEMP_FILE), ERROR);
+	SUCCEED();
+}
+
+void test_dos2_fwrite_FAILS()
+{
+	const char *_func = __func__;
+	beforeEach();
+
+	//BDD given
+
+	//BDD when
+	RETW result = dos2_fwrite(heap_top, 5, 10);
+
+	//BDD then
+	ASSERT_EQUAL(result, 0xff00|ERR_NOPEN, ERROR);
+	SUCCEED();
+}
+
+void test_dos2_fputs()
+{
+	const char *_func = __func__;
+	beforeEach();
+
+	//BDD given
+	dos2_remove(TEMP_FILE);
+
+	//BDD when
+	FILEH fh = dos2_fcreate(TEMP_FILE, O_RDWR, ATTR_NONE);
+	RETW result = dos2_fputs(TEMP_FILE, fh);
+	dos2_fclose(fh);
+
+	//BDD then
+	ASSERT_EQUAL(result, filesize(TEMP_FILE), ERROR);
+	SUCCEED();
+}
+
+void test_dos2_fputs_FAILS()
+{
+	const char *_func = __func__;
+	beforeEach();
+
+	//BDD given
+
+	//BDD when
+	RETW result = dos2_fputs(TEMP_FILE, 10);
+
+	//BDD then
+	ASSERT_EQUAL(result, 0xff00|ERR_NOPEN, ERROR);
+	SUCCEED();
+}
+
+void test_dos2_fseek_SET()
+{
+	const char *_func = __func__;
+	beforeEach();
+
+	//BDD given
+	memcpy(heap_top, '\0', 13);
+	create_temp_file();
+
+	//BDD when
+	FILEH fh = dos2_fopen(TEMP_FILE, O_RDONLY);
+	RETDW newpos = dos2_fseek(fh, 5, SEEK_SET);
+	dos2_fread(heap_top, 13, fh);
+	dos2_fclose(fh);
+
+	//BDD then
+	ASSERT_EQUAL(strcmp(heap_top, "tmp"), 0, ERROR);
+	ASSERT_EQUAL(newpos, 5, ERROR);
+	SUCCEED();
+}
+
+void test_dos2_fseek_CUR()
+{
+	const char *_func = __func__;
+	beforeEach();
+
+	//BDD given
+	memcpy(heap_top, '\0', 13);
+	create_temp_file();
+
+	//BDD when
+	FILEH fh = dos2_fopen(TEMP_FILE, O_RDONLY);
+	dos2_fread(heap_top, 2, fh);
+	RETDW newpos = dos2_fseek(fh, 3, SEEK_CUR);
+	dos2_fread(heap_top, 13, fh);
+	dos2_fclose(fh);
+
+	//BDD then
+	ASSERT_EQUAL(strcmp(heap_top, "tmp"), 0, ERROR);
+	ASSERT_EQUAL(newpos, 5, ERROR);
+	SUCCEED();
+}
+
+void test_dos2_fseek_END()
+{
+	const char *_func = __func__;
+	beforeEach();
+
+	//BDD given
+	memcpy(heap_top, '\0', 13);
+	create_temp_file();
+
+	//BDD when
+	FILEH fh = dos2_fopen(TEMP_FILE, O_RDONLY);
+	RETDW newpos = dos2_fseek(fh, -3, SEEK_END);
+	dos2_fread(heap_top, 13, fh);
+	dos2_fclose(fh);
+
+	//BDD then
+	ASSERT_EQUAL(newpos, 5, ERROR);
+	ASSERT_EQUAL(strcmp(heap_top, "tmp"), 0, ERROR);
+	SUCCEED();
+}
+
+void test_dos2_fseek_FAILS()
+{
+	const char *_func = __func__;
+	beforeEach();
+
+	//BDD given
+	create_temp_file();
+
+	//BDD when
+	RETDW result1 = dos2_fseek(10, 3, SEEK_SET);
+
+	FILEH fh = dos2_fopen(TEMP_FILE, O_RDONLY);
+	RETDW result2 = dos2_fseek(fh, 3, SEEK_SET|SEEK_CUR|SEEK_END);
+	RETDW result3 = dos2_fseek(fh, 30, SEEK_SET);
+	dos2_fclose(fh);
+
+	//BDD then
+	ASSERT_EQUAL(result1, 0xff00|ERR_NOPEN, ERROR);
+	ASSERT_EQUAL(result2, 11, ERROR);
+	ASSERT_EQUAL(result3, 30, ERROR);
+	SUCCEED();
+}
+
+void test_dos2_get_current_directory()
+{
+	const char *_func = __func__;
+	beforeEach();
+
+	//BDD given
+	memset(heap_top, 1, MAX_PATH_SIZE);
+	char drive = getCurrentDrive();
+
+	//BDD when
+	char result = dos2_getCurrentDirectory(drive, heap_top);
+
+	//BDD then
+	ASSERT(strcmp(heap_top, "")==0, ERROR);
+	ASSERT_EQUAL(result, 0, ERROR);
+	SUCCEED();
+}
+
+void test_dos2_get_current_directory_FAILS()
+{
+	const char *_func = __func__;
+	beforeEach();
+
+	//BDD given
+	memset(heap_top, 1, MAX_PATH_SIZE);
+	char drive = 8;
+
+	//BDD when
+	char result = dos2_getCurrentDirectory(drive, heap_top);
+
+	//BDD then
+	ASSERT(strcmp(heap_top, "")==0, ERROR);
+	ASSERT_EQUAL(result, ERR_IDRV, ERROR);
+	SUCCEED();
+}
+
+void test_dos2_findfirst()
+{
+	const char *_func = __func__;
+	beforeEach();
+
+	//BDD given
+	memset(heap_top, 0, sizeof(FFBLK));
+	FFBLK *ffblk = (FFBLK*)heap_top;
+
+	//BDD when
+	ERRB result = dos2_findfirst("*.SYS", ffblk, ATTR_NONE);
+
+	//BDD then
+	ASSERT_EQUAL(result, 0, ERROR);
+	ASSERT_EQUAL(ffblk->magic, 0xff, ERROR);
+	ASSERT_EQUAL(strcmp(ffblk->filename, "MSXDOS.SYS"), 0, ERROR);
+	ASSERT_EQUAL(ffblk->attribs, 0, ERROR);
+	ASSERT_EQUAL(ffblk->filesize, 2432, ERROR);
+	ASSERT_EQUAL(ffblk->drive, 1, ERROR);
+	SUCCEED();
+}
+
+void test_dos2_findfirst_NOFIL()
+{
+	const char *_func = __func__;
+	beforeEach();
+
+	//BDD given
+	memset(heap_top, 0, sizeof(FFBLK));
+	FFBLK *ffblk = (FFBLK*)heap_top;
+
+	//BDD when
+	ERRB result = dos2_findfirst("*.BAD", ffblk, ATTR_NONE);
+
+	//BDD then
+	ASSERT_EQUAL(result, ERR_NOFIL, ERROR);
+	ASSERT_EQUAL(ffblk->magic, 0xff, ERROR);
+	SUCCEED();
+}
+
+void test_dos2_findnext()
+{
+	const char *_func = __func__;
+	beforeEach();
+
+	//BDD given
+	memset(heap_top, 0, sizeof(FFBLK));
+	FFBLK *ffblk = (FFBLK*)heap_top;
+
+	//BDD when
+	dos2_findfirst("*.SYS", ffblk, ATTR_NONE);
+	ERRB result = dos2_findnext(ffblk);
+
+	//BDD then
+	ASSERT_EQUAL(result, 0, ERROR);
+	ASSERT_EQUAL(ffblk->magic, 0xff, ERROR);
+	ASSERT_EQUAL(strcmp(ffblk->filename, "MSXDOS2.SYS"), 0, ERROR);
+	ASSERT_EQUAL(ffblk->attribs, 0, ERROR);
+	ASSERT_EQUAL(ffblk->filesize, 2565, ERROR);
+	ASSERT_EQUAL(ffblk->drive, 1, ERROR);
+	SUCCEED();
+}
+
+void test_dos2_findnext_NOFIL()
+{
+	const char *_func = __func__;
+	beforeEach();
+
+	//BDD given
+	memset(heap_top, 0, sizeof(FFBLK));
+	FFBLK *ffblk = (FFBLK*)heap_top;
+
+	//BDD when
+	dos2_findfirst("*.BAT", ffblk, ATTR_NONE);
+	ERRB result = dos2_findnext(ffblk);
+
+	//BDD then
+	ASSERT_EQUAL(result, ERR_NOFIL, ERROR);
+	ASSERT_EQUAL(ffblk->magic, 0xff, ERROR);
+	SUCCEED();
+}
+
+void test_dos2_explain()
+{
+	const char *_func = __func__;
+	beforeEach();
+
+	//BDD given
+	memset(heap_top, 0, 100);
+
+	//BDD when
+	dos2_explain(ERR_ISBFN, heap_top);
+	ASSERT_EQUAL(strcmp(heap_top, "Invalid sub-function number"), 0, ERROR);
+	dos2_explain(ERR_NOFIL, heap_top);
+	ASSERT_EQUAL(strcmp(heap_top, "File not found"), 0, ERROR);
+	dos2_explain(ERR_NORAM, heap_top);
+	ASSERT_EQUAL(strcmp(heap_top, "Not enough memory"), 0, ERROR);
+	dos2_explain(ERR_INTER, heap_top);
+	ASSERT_EQUAL(strcmp(heap_top, "Internal error"), 0, ERROR);
+
+	//BDD then
+	SUCCEED();
+}
+
+void test_dos2_parsePathname()
+{
+	const char *_func = __func__;
+	beforeEach();
+
+	uint8_t result;
+	PATH_parsed *info = (PATH_parsed*)heap_top;
+
+	const char *PATH_TEST1 = "b:\\dir1\\dir2\\file1.com param1";
+	const char *PATH_TEST2 = "a:\\dir1\\";
+	const char *PATH_TEST3 = "\\dir1\\file1 param1";
+
+	//Test 1
+	result = dos2_parsePathname(PATH_TEST1, info);
+	ASSERT_EQUAL(result, 0, ERROR);
+	ASSERT_EQUAL(info->drive, 2, ERROR);
+	ASSERT_EQUAL(info->termChar-PATH_TEST1, 22, ERROR);
+	ASSERT_EQUAL(info->lastItem-PATH_TEST1, 13, ERROR);
+	ASSERT_EQUAL(info->flags.values.moreThanDrive, true, ERROR);
+	ASSERT_EQUAL(info->flags.values.anyDirectory, true, ERROR);
+	ASSERT_EQUAL(info->flags.values.anyDrive, true, ERROR);
+	ASSERT_EQUAL(info->flags.values.anyFilename, true, ERROR);
+	ASSERT_EQUAL(info->flags.values.anyExtension, true, ERROR);
+	ASSERT_EQUAL(info->flags.values.lastAmbiguous, false, ERROR);
+	ASSERT_EQUAL(info->flags.values.lastIsDot, false, ERROR);
+	ASSERT_EQUAL(info->flags.values.lastIsDosDot, false, ERROR);
+
+	//Test 2
+	result = dos2_parsePathname(PATH_TEST2, info);
+	ASSERT_EQUAL(result, 0, ERROR);
+	ASSERT_EQUAL(info->drive, 1, ERROR);
+	ASSERT_EQUAL(info->termChar-PATH_TEST2, 8, ERROR);
+	ASSERT_EQUAL(info->lastItem-PATH_TEST2, 8, ERROR);
+	ASSERT_EQUAL(info->flags.values.moreThanDrive, true, ERROR);
+	ASSERT_EQUAL(info->flags.values.anyDirectory, true, ERROR);
+	ASSERT_EQUAL(info->flags.values.anyDrive, true, ERROR);
+	ASSERT_EQUAL(info->flags.values.anyFilename, false, ERROR);
+	ASSERT_EQUAL(info->flags.values.anyExtension, false, ERROR);
+	ASSERT_EQUAL(info->flags.values.lastAmbiguous, false, ERROR);
+	ASSERT_EQUAL(info->flags.values.lastIsDot, false, ERROR);
+	ASSERT_EQUAL(info->flags.values.lastIsDosDot, false, ERROR);
+
+	//Test 3
+	result = dos2_parsePathname(PATH_TEST3, info);
+	ASSERT_EQUAL(result, 0, ERROR);
+	ASSERT_EQUAL(info->drive, 1, ERROR);
+	ASSERT_EQUAL(info->termChar-PATH_TEST3, 11, ERROR);
+	ASSERT_EQUAL(info->lastItem-PATH_TEST3, 6, ERROR);
+	ASSERT_EQUAL(info->flags.values.moreThanDrive, true, ERROR);
+	ASSERT_EQUAL(info->flags.values.anyDirectory, true, ERROR);
+	ASSERT_EQUAL(info->flags.values.anyDrive, false, ERROR);
+	ASSERT_EQUAL(info->flags.values.anyFilename, true, ERROR);
+	ASSERT_EQUAL(info->flags.values.anyExtension, false, ERROR);
+	ASSERT_EQUAL(info->flags.values.lastAmbiguous, false, ERROR);
+	ASSERT_EQUAL(info->flags.values.lastIsDot, false, ERROR);
+	ASSERT_EQUAL(info->flags.values.lastIsDosDot, false, ERROR);
+
+	//BDD then
+	SUCCEED();
+}
+
+void test_dos2_getScreenSize()
+{
+	const char *_func = __func__;
+	beforeEach();
+
+	//BDD given
+
+	//BDD when
+	RETW result = dos2_getScreenSize();
+
+	//BDD then
+	ASSERT_EQUAL(result, 0x1850, ERROR);	// 24 rows x 80 cols
+	SUCCEED();
+}
+
+void test_dos2_ram_mapper()
+{
+	const char *_func = __func__;
+	if (dosVersion() == VER_MSXDOS1x) {
 		TODO(TODO_ONLY_DOS2);
 		return;
 	}
+	beforeEach();
 
 	//BDD given
 	MAPPER_Segment *segm = (MAPPER_Segment*)heap_top;
-	beforeEach();
+	RETB freeSegments = mapperInit();
+	ASSERT_EQUAL(freeSegments, 21, ERROR);
 
 	//BDD when
 	mapperSetOriginalSegmentBack(2);
@@ -886,23 +1428,55 @@ void test_ram_mapper()
 	SUCCEED();
 }
 
-void test_get_drive_letter_info()
+// =============================================================================
+// TESTS NEXTOR
+
+void test_nxtr_get_drive_letter_info()
 {
 	const char *_func = __func__;
+	beforeEach();
 
 	//BDD given
-	beforeEach();
 	memset(heap_top, 0, 100);
+	DRIVE_info *info = (DRIVE_info*)heap_top;
 
 	//BDD when
-//	uint8_t result = get_drive_letter_info();
+	ERRB result = nxtr_getDriveLetterInfo(0, info);
 
 	//BDD then
-//	ASSERT_EQUAL(result, 0, ERROR);
+	ASSERT_EQUAL(result, 0, ERROR);
+	ASSERT_EQUAL(info->driveStatus, 0, ERROR); 
+		// 0: Unassigned
+		// 1: Assigned to a storage device attached to a Nextor or MSX-DOS driver
+		// 2: Unused
+		// 3: A file is mounted in the drive
+		// 4: Assigned to the RAM disk (all other fields will be zero)
+	ASSERT_EQUAL(info->driveSlot, 0, ERROR);	// Driver slot number
+	ASSERT_EQUAL(info->driveSegment, 0, ERROR);	// Driver segment number, FFh if driver is embedded within a Nextor or MSX-DOS kernel ROM (always FFh in current version)
+	ASSERT_EQUAL(info->relDriveNum, 0, ERROR);	// Relative drive number within the driver (for drive-based drivers only; FFh if device-based driver)
+	ASSERT_EQUAL(info->deviceIndex, 0, ERROR);	// Device index (for device-based drivers only; 0 for drive-based drivers and MSX-DOS drivers)
+	ASSERT_EQUAL(info->logicalIndex, 0, ERROR);	// Logical unit index (for device-based drivers only; 0 for drive-based drivers and MSX-DOS drivers)
+	ASSERT_EQUAL(info->firstDevSec, 0, ERROR);	// First device sector number (for devices in device-based drivers only;  always zero for drive-based drivers and MSX-DOS drivers)
 	ASSERT_EQUAL(strncmp(heap_top+133, "Boot error\r\nPress any key", 25), 0, ERROR);
 	SUCCEED();
 }
 
+void test_nxtr_get_cluster_info_fat()
+{
+	const char *_func = __func__;
+	beforeEach();
+
+	//BDD given
+	memset(heap_top, 0, sizeof(CLUSTER_info));
+	CLUSTER_info *info = (CLUSTER_info*)heap_top;
+
+	//BDD when
+	ERRB result = nxtr_getClusterInfoFAT(0, 0, info);
+
+	//BDD then
+	ASSERT_EQUAL(result, 0, ERROR);
+	SUCCEED();
+}
 
 
 
@@ -920,9 +1494,9 @@ int main(char** argv, int argc)
 	beforeAll();
 
 	test_getchar();
+	test_kbhit_TRUE(); test_kbhit_FALSE();
 
 	test_get_current_drive();
-	test_get_current_directory(); test_get_current_directory_FAILS();
 	test_get_program_path();
 	test_get_drive_params(); test_get_drive_params_FAILS();
 
@@ -930,7 +1504,7 @@ int main(char** argv, int argc)
 	test_fclose(); test_fclose_FAILS();
 	test_fcreate(); test_fcreate_FAILS();
 	test_remove(); test_remove_FAILS();
-	test_fread(); test_fread_FAILS();
+	test_fread(); test_fread_EOF(); test_fread_FAILS();
 	test_fwrite(); test_fwrite_FAILS();
 	test_fputs(); test_fputs_FAILS();
 	test_fgets(); test_fgets_CRLF(); test_fgets_FAILS();
@@ -939,20 +1513,43 @@ int main(char** argv, int argc)
 	test_filesize(); test_filesize_FAILS();
 	test_fileexists(); test_fileexists_FAILS();
 
-	//test_dosver();
-	//test_parse_pathname();
-	//test_get_env();
-	test_explain();
-	//test_set_abort_routine();
+	test_dosversion();
 
 	test_set_transfer_address();
-	test_read_abs_sector();
+	test_read_abs_sector(); test_read_abs_sector_IDRV();
 	//test_write_abs_sector();
 
 	test_mapperGetTotalSegments();
 	test_mapperGetFreeSegments();
 	test_mapperGetCurrentSegmentInPage();
-	test_ram_mapper();
 
-	//test_get_drive_letter_info();
+	if (dosVersion() >= VER_MSXDOS2x) {
+		test_dos2_get_env(); test_dos2_get_env_ELONG(); test_dos2_get_env_EMPTY();
+
+		test_dos2_fcreate(); test_dos2_fcreate_FAILS();
+		test_dos2_fopen(); test_dos2_fopen_FAILS();
+		test_dos2_fclose(); test_dos2_fclose_FAILS();
+		//test_dos2_flush();
+		test_dos2_remove(); test_dos2_remove_FAILS();
+		test_dos2_fread(); test_dos2_fread_FAILS();
+		test_dos2_fwrite(); test_dos2_fwrite_FAILS();
+		test_dos2_fputs(); test_dos2_fputs_FAILS();
+		test_dos2_fseek_SET(); test_dos2_fseek_CUR(); test_dos2_fseek_END(); test_dos2_fseek_FAILS();
+		//test_dos2_ftell();
+
+		//test_dos2_set_abort_routine();
+		test_dos2_get_current_directory(); test_dos2_get_current_directory_FAILS();
+		test_dos2_findfirst(); test_dos2_findfirst_NOFIL();
+		test_dos2_findnext(); test_dos2_findnext_NOFIL();
+		test_dos2_getScreenSize();
+		test_dos2_explain();
+		test_dos2_parsePathname();
+
+		test_dos2_ram_mapper();
+	}
+
+	if (dosVersion() >= VER_NextorDOS) {
+		test_nxtr_get_drive_letter_info();
+		test_nxtr_get_cluster_info_fat();
+	}
 }

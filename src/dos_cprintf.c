@@ -105,4 +105,4 @@ void _printf(const char *format, va_list va)
 	}
 }
 
-#endif
+#endif	//DISABLE_CONIO

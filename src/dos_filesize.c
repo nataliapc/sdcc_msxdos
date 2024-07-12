@@ -1,16 +1,16 @@
 #include "dos.h"
 
 
-uint32_t filesize(char *filename)
+RETDW filesize(char *filename)
 {
-	FILEH fh = fopen(filename, O_RDONLY);
-	uint32_t size;
+	ERRB result = fopen(filename);
+	int32_t size;
 	char *error;
-	if (fh & 0xff00) {
-		size = fh;
+	if (result != 0) {
+		size = -1;
 	} else {
-		size = fseek(fh, 0, SEEK_END);
-		fclose(fh);
+		size = fseek(0, SEEK_END);
+		fclose();
 	}
 	return size;
 }

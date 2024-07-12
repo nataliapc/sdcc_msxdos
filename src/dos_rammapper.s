@@ -29,7 +29,7 @@ initializeMapper::
 		ld   a,l
 		dec  a
 		ld   (#_DOS2MAPPER),a		; Store the DOS version -1 (0:MSXDOS1 non-0:MSXDOS2 or better)
-		jr   z,.im_msxdos1			; if MSX-DOS 1.x if detected we can use pagination without care
+		jr   z,.im_msxdos1			; if MSX-DOS 1.x is detected we can use pagination without care
 		
 	.im_msxdos2:					; for MSX-DOS2 we disable RAM pagination
 		xor  a						; TODO: implement MSX-DOS2 mapper functions
@@ -71,7 +71,6 @@ initializeMapper::
 		dec  (ix)
 		dec  (ix)
 		; Restore page 2 to default segment & Return
-
 
 ; void restoreMapperPage2();
 _restoreMapperPage2::

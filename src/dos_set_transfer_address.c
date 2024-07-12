@@ -1,6 +1,9 @@
 #include "dos.h"
 
 
+void setTransferAddress(void *memaddress) __naked __sdcccall(1)
+{
+	memaddress;
 /*
     SET DISK TRANSFER ADDRESS (1AH)
     Parameters:    C = 1AH (_SETDTA)
@@ -14,21 +17,10 @@ entry, and for absolute read and write calls. It is not used by the new
 MSX-DOS read and write functions. The address is set back to 80h by a DISK
 RESET call.
 */
-void set_transfer_address(void *memaddress) __naked __sdcccall(0)
-{
-	memaddress;
-
 	__asm
-		push ix
-		ld ix,#4
-		add ix,sp
-		ld e,0(ix)
-		ld d,1(ix)
-		pop ix
+		ex de,hl		; DE = Param memaddress
 
 		ld c,#SETDTA
-		DOSCALL
-
-		ret
+		DOSJP
 	__endasm;
 }
