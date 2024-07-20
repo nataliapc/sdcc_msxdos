@@ -3,8 +3,9 @@
 #include <stdbool.h>
 
 
+#ifndef __SDCC_VERSION_NUM
 #define __SDCC_VERSION_NUM	(__SDCC_VERSION_MAJOR * 10000 + __SDCC_VERSION_MINOR * 100 + __SDCC_VERSION_PATCH)
-
+#endif
 
 #if __SDCC_VERSION_NUM < 40112
 	#define __sdcccall(x)

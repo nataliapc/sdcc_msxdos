@@ -1,6 +1,6 @@
 /*
 #####################################################################
-	 MSX Constants & structs
+	 MSX Constants & structs [2024-07-15]
 #####################################################################
 */
 #ifndef  __MSX_CONST_H__
@@ -11,7 +11,8 @@
 
 // ========================================================
 // Tools
-#define DOSCALL  	call 5
+#define DOSCALL     call 5
+#define DOSJP       jp 5
 #define BIOSCALL 	ld iy,(#EXPTBL-1) \
                 	call CALSLT
 #define JP_BIOSCALL ld iy,(#EXPTBL-1) \
@@ -72,6 +73,29 @@ __sfr __at (0x99) IO_VDP2;
 
 
 // ========================================================
+// MSX-DOS Nextor 2.1 BIOS
+// https://github.com/Konamiman/Nextor/blob/v2.1/docs/Nextor%202.1%20Programmers%20Reference.md#3-new-function-calls
+//
+#ifndef __DOS_NEXTOR__
+#define __DOS_NEXTOR__
+#define FOUT    0x71		// Turn On/Off the fast STROUT mode. When enabled, the _STROUT and _ZSTROUT functions will work faster.
+#define ZSTROUT 0x72		// Prints on the screen the string pointed by DE, the string must be terminated with a zero character.
+#define RDDRV   0x73		// Reads sectors directly from a drive (no filesystem dependent)
+#define WRDRV   0x74		// Writes sectors directly from a drive (no filesystem dependent)
+#define RALLOC  0x75
+#define DSPACE  0x76		// Get drive space information
+#define LOCK    0x77		// Lock/unlock a drive, or get lock state for a drive
+#define GDRVR   0x78		// Get information about a device driver
+#define GDLI    0x79		// Get information about a drive letter
+#define GPART   0x7A		// Get information about a device partition
+#define CDRVR   0x7B		// Call a routine in a device driver
+#define MAPDRV  0x7C		// Map a drive letter to a driver and device
+#define Z80MODE 0x7D		// Enable or disable the Z80 access mode for a driver
+#define GETCLUS 0x7E		// Get information for a cluster on a FAT drive
+#endif	//__DOS_NEXTOR__
+
+
+// ========================================================
 // MSX/MSX2 system constants
 // http://map.grauw.nl/resources/msxsystemvars.php
 // https://www.msx.org/wiki/System_variables_and_work_area
@@ -97,6 +121,8 @@ __sfr __at (0x99) IO_VDP2;
 // MSX character codes and compatible sentences VT-52
 // https://www.msx.org/wiki/MSX_Characters_and_Control_Codes
 //
+#ifndef __VT_KEY_CODES__
+#define __VT_KEY_CODES__
 #define  VT_BEEP		"\x07"		// A beep sound
 #define  VT_UP			"\x1E"		//27,"A"	; Cursor up
 #define  VT_DOWN		"\x1F"		//27,"B"	; Cursor down
@@ -121,6 +147,7 @@ __sfr __at (0x99) IO_VDP2;
 #define  KEY_RIGHT		28
 #define  KEY_LEFT		29
 #define  KEY_ENTER		13
+#endif	//__VT_KEY_CODES__
 
 
 #endif //__MSX_CONST_H__
