@@ -1,7 +1,7 @@
 #include "dos.h"
 
 
-ERRB fcreate(char *filename) __naked __z88dk_fastcall
+bool fcreate(char *filename) __naked __sdcccall(1)
 {
 	filename;
 /*
@@ -30,15 +30,17 @@ exactly as if an OPEN function call had been done.
 	__asm
 		push hl						; HL = Param filename
 		call dos_initializeFCB
+		ld   hl,#SYSFCB+12			; Extent set to 1 for existing file error
+		ld   (hl),#0xff
 				
 		pop de						; Put filename pointer in DE
 		call dos_copyFilenameToFCB
 
 		ld   de,#SYSFCB				; DE = Pointer to unopened FCB
-		ld   c,#FMAKE				; Call FOPEN Bios function
+		ld   c,#FMAKE				; Call FMAKE Bios function
 		DOSCALL
 
-		inc l						; error = 0 | no error = 1
-		ret							; Returns L
+		inc a						; error = 0 | no error = 1
+		ret							; Returns A
 	__endasm;
 }

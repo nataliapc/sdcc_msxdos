@@ -1,7 +1,7 @@
 #include "dos.h"
 
 
-inline ERRB fflush()
+inline bool fflush()
 {
 	return fclose();
 }

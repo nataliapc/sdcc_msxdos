@@ -1,7 +1,7 @@
 #include "dos.h"
 
 
-RETDW fseek(uint32_t offset, char origin)
+RETDW fseek(uint32_t offset, uint8_t origin)
 {
 	FCB *fcb = (FCB*)SYSFCB;
 
@@ -12,9 +12,9 @@ RETDW fseek(uint32_t offset, char origin)
 		fcb->rndRecord += offset;
 	} else
 	if (origin==SEEK_END) {
-		fcb->rndRecord = fcb->fileSize - offset;
+		fcb->rndRecord = fcb->fileSize + offset;
 	} else {
-		return -1;
+		return -1L;
 	}
-	return (int32_t)fcb->rndRecord;
+	return fcb->rndRecord;
 }

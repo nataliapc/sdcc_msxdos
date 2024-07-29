@@ -28,7 +28,7 @@ static ERRB _abs_sector(uint8_t drive, uint16_t startsec, uint8_t nsec, uint8_t 
                   DE = Sector number
                    L = Drive number (0=A: etc.)
                    H = Number of sectors to read
-    Results:       A = Error code (0=> no error)
+    Results:       A = Error code (0 => no error)
 
 This function reads sectors directly from the disk without interpreting them as
 files. The disk must be a valid DOS disk in order for the sector number to be

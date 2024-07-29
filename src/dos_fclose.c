@@ -1,7 +1,7 @@
 #include "dos.h"
 
 
-ERRB fclose(void) __naked __z88dk_fastcall
+bool fclose(void) __naked __sdcccall(1)
 {
 /*
     CLOSE FILE [FCB] (10H)
@@ -22,6 +22,7 @@ ERRB fclose(void) __naked __z88dk_fastcall
 		ld c,#FCLOSE
 		DOSCALL
 
-		ret					; Returns L
+		inc a				; error = 0 | no error = 1
+		ret					; Returns A
 	__endasm;
 }

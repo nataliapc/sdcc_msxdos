@@ -4,10 +4,7 @@
 
 bool fileexists(char *filename)
 {
-	ERRB result = fopen(filename);
-	if (result == 0) {
-		fclose();
-		return true;
-	}
-	return false;
+	bool result = fopen(filename);
+	dos_initializeFCB();
+	return result;
 }

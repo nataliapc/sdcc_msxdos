@@ -26,44 +26,45 @@ OPFLAGS := --opt-code-size $(FULLOPT)
 WRFLAGS := --less-pedantic --disable-warning 196 --disable-warning 84 --disable-warning 85
 CCFLAGS := --code-loc 0x0180 --data-loc 0 -mz80 --no-std-crt0 --out-fmt-ihx $(OPFLAGS) $(WRFLAGS) $(CXXFLAGS)
 
-SRCDIR = ./src/
-LIBDIR = ./lib/
-OBJDIR = ./obj/
-DSKDIR = ./dsk/
+SRCDIR = ./src
+LIBDIR = ./lib
+OBJDIR = ./obj
+DSKDIR = ./dsk
 DIR_GUARD=@mkdir -p $(OBJDIR)
 LIB_GUARD=@mkdir -p $(LIBDIR)
 
 EMUSCRIPTS = -script ../emulation/boot.tcl
 
 LIBS := dos.lib
-REL_LIBS := $(addprefix $(LIBDIR), $(LIBS)) \
-			$(addprefix $(OBJDIR), crt0msx_msxdos_advanced.rel heap.rel assert.rel)
+REL_LIBS := $(addprefix $(LIBDIR)/, $(LIBS)) \
+			$(addprefix $(OBJDIR)/, crt0msx_msxdos_advanced.rel \
+			utils_debug.rel heap.rel assert.rel)
 
-PROGRAMS = $(OBJDIR)testdos1.com
+PROGRAMS = $(OBJDIR)/testdos1.com
 
 default: all
 
 all: $(PROGRAMS)
 
-libs: $(LIBDIR)$(LIBS) $(LIBDIR)dos.h
+libs: $(LIBDIR)/$(LIBS) $(LIBDIR)/dos.h
 
-$(LIBDIR)$(LIBS): ../lib/$(LIBS)
+$(LIBDIR)/$(LIBS): ../lib/$(LIBS)
 	@echo "$(COL_ORANGE)#### LIB $@$(COL_RESET)"
 	@$(LIB_GUARD)
 	cp $^ $(LIBDIR)
 	cp ../include/dos.h $(LIBDIR)
 
-$(OBJDIR)%.rel: $(SRCDIR)%.s
+$(OBJDIR)/%.rel: $(SRCDIR)/%.s
 	@echo "$(COL_WHITE)#### ASM $@$(COL_RESET)"
 	@$(DIR_GUARD)
 	$(AS) -g -o $@ $^ ;
 
-$(OBJDIR)%.rel: $(SRCDIR)%.c
+$(OBJDIR)/%.rel: $(SRCDIR)/%.c
 	@echo "$(COL_WHITE)#### CC $@$(COL_RESET)"
 	@$(DIR_GUARD)
 	$(CC) $(CCFLAGS) -I$(LIBDIR) -c -o $@ $^ ;
 
-$(OBJDIR)testdos1.com: $(REL_LIBS) $(SRCDIR)tests_msxdos1.c
+$(OBJDIR)/testdos1.com: $(REL_LIBS) $(SRCDIR)/tests_msxdos1.c
 	@echo "$(COL_YELLOW)######## Compiling $@$(COL_RESET)"
 	@$(DIR_GUARD)
 	$(CC) $(CCFLAGS) -I$(LIBDIR) -L$(LIBDIR) $(subst .com,.c,$^) -o $(subst .com,.ihx,$@) ;
@@ -73,7 +74,7 @@ $(OBJDIR)testdos1.com: $(REL_LIBS) $(SRCDIR)tests_msxdos1.c
 
 clean:
 	@echo "$(COL_ORANGE)#### CLEAN$(COL_RESET)"
-	rm -v -f $(subst $(OBJDIR),$(DSKDIR),$(PROGRAMS))
+	rm -v -f $(subst $(OBJDIR)/,$(DSKDIR)/,$(PROGRAMS))
 	rm -f *.com *.asm *.lst *.sym *.bin *.ihx *.lk *.map *.noi *.rel
 	rm -rf $(OBJDIR) $(LIBDIR)
 
@@ -82,10 +83,11 @@ test: all
 	; then \
 		echo "**** openmsx already running..." \
 	; else \
+#		openmsx -machine msx1_eu -ext debugdevice -ext Mitsubishi_ML-30DC_ML-30FD -diska dsk/ $(EMUSCRIPTS) \
 #		openmsx -machine Philips_NMS_8245 -ext debugdevice -diska dsk/ $(EMUSCRIPTS) \
 #		openmsx -machine msx2plus -ext debugdevice -ext ram512k -diska dsk/ $(EMUSCRIPTS) \
-#		openmsx -machine Sony_HB-F1XD -ext debugdevice -ext ram512k -diska dsk/ $(EMUSCRIPTS) \
-		openmsx -machine turbor -ext debugdevice -diska dsk/ $(EMUSCRIPTS) \
+#		openmsx -machine turbor -ext debugdevice -diska dsk/ $(EMUSCRIPTS) \
+		openmsx -machine Sony_HB-F1XD -ext debugdevice -diska dsk/ $(EMUSCRIPTS) \
 	; fi'
 
 legacy:

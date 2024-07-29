@@ -10,10 +10,10 @@ void _ASSERT_TRUE(bool succeedCondition, const char *failMsg, char *file, char *
 	}
 }
 
-void _ASSERT_EQUAL(uint16_t value, uint16_t expected, const char *failMsg, char *file, char *func, int line)
+void _ASSERT_EQUAL(uint32_t value, uint32_t expected, const char *failMsg, char *file, char *func, int line)
 {
 	if (value != expected) {
-		cprintf("### Assert failed at: %s :: %s :: line %d\n\r    by \"%s\"\n\r    received:%u expected:%u\n\r\x07", file, func, line, failMsg, value, expected);
+		cprintf("### Assert failed at: %s :: %s :: line %d\n\r    by \"%s\"\n\r    received:%l expected:%l\n\r\x07", file, func, line, failMsg, value, expected);
 		crt_exit();
 	}
 }

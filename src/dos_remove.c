@@ -1,6 +1,7 @@
+#include <stdbool.h>
 #include "dos.h"
 
-ERRB remove(char *filename) __naked __sdcccall(1)
+bool remove(char *filename) __naked __sdcccall(1)
 {
 	filename;
 /*

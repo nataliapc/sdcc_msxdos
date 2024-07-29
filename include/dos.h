@@ -8,7 +8,7 @@
 #endif
 
 #if __SDCC_VERSION_NUM < 40112
-	#define __sdcccall(x)
+	#error SDCC version 4.2.0 required
 #endif
 
 #ifndef MSX2
@@ -85,6 +85,7 @@ typedef uint8_t  FILEH;
 #define RDBLK   0x27		// Random block write (FCB)		    MSX1
 #define RDABS   0x2F		// Absolute sector read			    MSX1
 #define WRABS   0x30		// Absolute sector write		    MSX1
+
 // MSXDOS 2
 #define DPARM   0x31		// Get disk parameters			         NEW
 #define FFIRST  0x40		// Find first entry				         NEW
@@ -128,7 +129,7 @@ typedef uint8_t  FILEH;
 #define Z80MODE 0x7D		// Enable or disable the Z80 access mode for a driver
 #define GETCLUS 0x7E		// Get information for a cluster on a FAT drive
 
-/* MSX DOS versions from dosver() */
+/* MSX DOS versions from dosVersion() */
 #define VER_UNKNOWN     0
 #define VER_MSXDOS1x    1
 #define VER_MSXDOS2x    2
@@ -140,11 +141,6 @@ typedef uint8_t  FILEH;
 #define O_WRONLY   0x02
 #define O_INHERIT  0x04
 
-/* seek modes */
-#define SEEK_SET	0	// Beginning of file
-#define SEEK_CUR	1	// Current position of the file pointer
-#define SEEK_END	2	// End of file
-
 /* file attributes */
 #define ATTR_NONE      0		// None.
 #define ATTR_READONLY  1		// If set then the file cannot be written to or deleted, but can be read, renamed or moved.
@@ -155,6 +151,11 @@ typedef uint8_t  FILEH;
 #define ATTR_ARCHIVE   32		// Is set when a file was written to and closed. This bit can be examined by, for example, the XCOPY command to determine whether the file has been changed.
 #define ATTR_RESERVED  64		// Reserved (always 0).
 #define ATTR_DEVICE    128		// This is set to indicate that the FIB refers to a character device (eg. "CON") rather than a disk file. All of the other attributes bits are ignored.
+
+/* seek modes */
+#define SEEK_SET	0	// Beginning of file
+#define SEEK_CUR	1	// Current position of the file pointer
+#define SEEK_END	2	// End of file
 
 /* DPARM.fsType filesystem types */
 #define FS_FAT12		0x00
@@ -379,23 +380,23 @@ typedef struct {
 // MSX-DOS 1.x
 RETB  getCurrentDrive(void) __sdcccall(1);
 char* getProgramPath(char *path);
-ERRB  getDriveParams(char drive, DPARM_info *param) __sdcccall(1);
 
-ERRB  fopen(char *filename) __z88dk_fastcall;
-ERRB  fcreate(char *filename) __z88dk_fastcall;
-ERRB  fclose(void) __z88dk_fastcall;
-ERRB  remove(char *filename) __sdcccall(1);
+bool  fopen(char *filename) __sdcccall(1);
+bool  fcreate(char *filename) __sdcccall(1);
+bool  fclose(void) __sdcccall(1);
+bool  remove(char *filename) __sdcccall(1);
 RETW  fread(char* buf, uint16_t size) __sdcccall(1);
 RETW  fwrite(char* buf, uint16_t size) __sdcccall(1);
-ERRB  fflush();
+bool  fflush();
 RETW  fputs(char* str);
 char* fgets(char* buf, uint16_t size);
-RETDW fseek(uint32_t offset, char origin);
+RETDW fseek(uint32_t offset, uint8_t origin);
 RETDW ftell(void);
 RETDW filesize(char *filename);
 bool  fileexists(char* filename);
 
-RETB dosVersion(void) __z88dk_fastcall;
+void dos_initializeFCB(void);
+RETB dosVersion(void) __sdcccall(1);
 void exit(void);
 
 void setTransferAddress(void *memaddress) __sdcccall(1);
@@ -403,6 +404,7 @@ ERRB readAbsoluteSector(uint8_t drive, uint16_t startsec, uint8_t nsec);
 ERRB writeAbsoluteSector(uint8_t drive, uint16_t startsec, uint8_t nsec);
 
 // MSX-DOS 2.x
+ERRB dos2_getDriveParams(char drive, DPARM_info *param) __sdcccall(1);
 ERRB dos2_getCurrentDirectory(char drive, char *path) __sdcccall(1);
 ERRB dos2_parsePathname(char* str, PATH_parsed *info) __sdcccall(1);
 

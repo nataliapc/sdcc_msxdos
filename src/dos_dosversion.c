@@ -1,7 +1,7 @@
 #include "dos.h"
 
 
-RETB dosVersion(void) __naked __z88dk_fastcall
+RETB dosVersion(void) __naked __sdcccall(1)
 {
 /*
     GET MSX-DOS VERSION NUMBER (6FH)
@@ -40,14 +40,14 @@ the MSXDOS2.SYS version in register DE.
 
 		or  a
 		jr  z,check_dos1$
-		ld  b,#0			; unknown DOS
+		xor a				; A = VER_UNKNOWN (unknown DOS)
 		jr  ret_version$
 
 	check_dos1$:
 		ld  a,b				; B<2 --> MSX-DOS 1
 		cp  #2
 		jr  nc,check_dos2nextor$
-		ld  b,#1			; is MSX-DOS 1
+		ld  a,#VER_MSXDOS1x	; A = VER_MSXDOS1x (is MSX-DOS 1)
 		jr  ret_version$
 
 	check_dos2nextor$:
@@ -56,17 +56,15 @@ the MSXDOS2.SYS version in register DE.
 		ld  a,h
 		dec a
 		jr  z,is_nextor$
-		ld  b,#2			; is MSXDOS 2
+		ld  a,#VER_MSXDOS2x	; A = VER_MSXDOS2x (is MSXDOS 2)
 		jr  ret_version$
-	
-	is_nextor$:				; is NextorDOS
-		ld  b,#3
+
+	is_nextor$:				; A = VER_NextorDOS (is NextorDOS)
+		ld  a,#VER_NextorDOS
 
 	ret_version$:
-		ld  l, b
-
 		pop ix
-		ret
+		ret					; Returns A
 	__endasm;
 }
 

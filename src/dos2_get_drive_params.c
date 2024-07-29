@@ -1,7 +1,7 @@
 #include "dos.h"
 
 
-ERRB getDriveParams(char drive, DPARM_info *param) __naked __sdcccall(1)
+ERRB dos2_getDriveParams(char drive, DPARM_info *param) __naked __sdcccall(1)
 {
 	drive, param;
 /*

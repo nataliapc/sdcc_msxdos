@@ -3,5 +3,5 @@
 
 inline RETDW ftell(void)
 {
-	return fseek(0, SEEK_CUR);
+	return ((FCB*)SYSFCB)->rndRecord;
 }

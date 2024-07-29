@@ -1,7 +1,7 @@
 #include "dos.h"
 
 
-ERRB fopen(char *filename) __naked __z88dk_fastcall
+bool fopen(char *filename) __naked __sdcccall(1)
 {
 	filename;
 /*
@@ -60,9 +60,7 @@ original drive byte was zero (default).
 		ld c,#FOPEN					; Call FOPEN Bios function
 		DOSCALL
 
-		or a						; Returns L
-		ret z
-		ld l, #0xd7					; error ERR_NOFIL [File not found]
-		ret
+		inc a						; error = 0 | no error = 1
+		ret							; Returns A
 	__endasm;
 }

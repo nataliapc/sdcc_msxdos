@@ -36,17 +36,16 @@ quicker than several small ones.
 
 If the number of records to write (HL) is zero then no data will be written,
 but the size of the file will be altered to the value specified by the random
-record field. This may be either longer or shorter than the file's current size
-and disk space will be allocated or freed as required. Additional disk space
-allocated in this way will not be initialized to any particular value.
+record field (FCB). This may be either longer or shorter than the file's current 
+size and disk space will be allocated or freed as required. Additional disk 
+space allocated in this way will not be initialized to any particular value.
 */
 	__asm
-		ex de,hl			; DE = Param buff
+		ex de,hl			; DE = Param buf
 		push hl				; HL = Param size
 
 		ld hl,#1			; Set FCB Record size to 1 byte
 		ld (#SYSFCB+14),hl
-
 							; DE = Required Disk Transfer Address
 		ld c,#SETDTA		; Set Disk transfer address (DTA)
 		DOSCALL
@@ -60,8 +59,7 @@ allocated in this way will not be initialized to any particular value.
 		pop de				; Returns DE
 		or a
 		ret z				; no error = number of bytes writed
-		ld de, #0xffff
-		ret					; error = $ffff
+		ld de, #0
+		ret					; error = $0
 	__endasm;
 }
-

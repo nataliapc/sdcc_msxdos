@@ -3,7 +3,7 @@
 
 RETW fread(char* buf, uint16_t size) __naked __sdcccall(1)
 {
-  buf, size;
+	buf, size;
 /*
     RANDOM BLOCK READ [FCB] (27H)
     Parameters:    C = 27H (_RDBLK)
@@ -47,7 +47,7 @@ read, ie. the value returned in HL is added on to it.
 		ex de,hl			; Returns DE
 		or a
 		ret z				; no error = number of bytes read
-		ld de, #0xffc7
-		ret					; error = $ffd7 [ERR_EOF]
+		ld de, #0
+		ret					; error = $0 [ERR_EOF]
 	__endasm;
 }

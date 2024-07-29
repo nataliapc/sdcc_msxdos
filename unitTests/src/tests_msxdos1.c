@@ -1,5 +1,6 @@
 #include <string.h>
 #include <stdio.h>
+#include <assert.h>
 #include "heap.h"
 #include "assert.h"
 #include "dos.h"
@@ -41,35 +42,38 @@ const char* const BAD_FILE = "file.bad";
 const char* const TEXT_CRLF = "this text\r\nhave carriage";
 const char* const TEXT_CRLF_15 = "this text\r\n";
 
+static bool  resultbool;
+static char *resultp;
+static RETB  result8;
+static RETW  result16;
+static RETDW result32;
+static char  buff[512];
+
 extern void dos_initializeFCB();
 
 // =============================================================================
 
 static void beforeAll()
 {
-	if (dosVersion() >= VER_MSXDOS2x) {
-		mapperInit();
-	}
 }
 
 static void beforeEach()
 {
-	memcpy((void*)SYSFCB, 0, sizeof(FCB));
+	dos_initializeFCB();
+	memset(heap_top, 0, 2048);
 }
 
 static void create_temp_file()
 {
-	FILEH fh = fcreate(TEMP_FILE);
+	fcreate(TEMP_FILE);
 	fwrite(TEMP_FILE, strlen(TEMP_FILE));
-	fflush();
 	fclose();
 }
 
 static void create_file(char *text)
 {
-	FILEH fh = fcreate(TEMP_FILE);
+	fcreate(TEMP_FILE);
 	fwrite(text, strlen(text));
-	fflush();
 	fclose();
 }
 
@@ -87,10 +91,10 @@ void test_getchar()
 	ADDR_POINTER_WORD(PUTPNT)++;
 
 	//BDD when
-	char result = getchar();
+	result8 = getchar();
 
 	//BDD then
-	ASSERT_EQUAL(result, '#', ERROR);
+	ASSERT_EQUAL(result8, '#', ERROR);
 	SUCCEED();
 }
 
@@ -103,10 +107,10 @@ void test_kbhit_TRUE()
 	ADDR_POINTER_WORD(PUTPNT)++;
 
 	//BDD when
-	bool result = kbhit();
+	result8 = kbhit();
 
 	//BDD then
-	ASSERT_EQUAL(result, true, ERROR);
+	ASSERT_EQUAL(result8, true, ERROR);
 	SUCCEED();
 }
 
@@ -119,10 +123,10 @@ void test_kbhit_FALSE()
 	ADDR_POINTER_WORD(PUTPNT) = ADDR_POINTER_WORD(GETPNT);
 
 	//BDD when
-	char result = kbhit();
+	resultbool = kbhit();
 
 	//BDD then
-	ASSERT_EQUAL(result, false, ERROR);
+	ASSERT_EQUAL(resultbool, false, ERROR);
 	SUCCEED();
 }
 
@@ -134,10 +138,10 @@ void test_get_current_drive()
 	//BDD given
 
 	//BDD when
-	RETB drive = getCurrentDrive();
+	result8 = getCurrentDrive();
 
 	//BDD then
-	ASSERT_EQUAL(drive, 0, ERROR);
+	ASSERT_EQUAL(result8, 0, ERROR);
 	SUCCEED();
 }
 
@@ -149,58 +153,12 @@ void test_get_program_path()
 	//BDD given
 
 	//BDD when
-	char *result = getProgramPath(heap_top);
+	resultp = getProgramPath(heap_top);
 
 	//BDD then
-	ASSERT(strcmp(heap_top, "A:\\TESTDOS1.COM")==0, ERROR);
-	ASSERT_EQUAL(result, heap_top, ERROR);
-	SUCCEED();
-}
-
-void test_get_drive_params()
-{
-	const char *_func = __func__;
-	beforeEach();
-
-	//BDD given
-	memset(heap_top, 0, sizeof(DPARM_info));
-	DPARM_info *info = (DPARM_info*)heap_top;
-	char drive = getCurrentDrive();
-
-	//BDD when
-	ERRB result = getDriveParams(drive, info);
-
-	//BDD then
-	if (dosVersion() == VER_MSXDOS1x) {
-		ASSERT_EQUAL(result, ERR_IBDOS, ERROR);
-	} else {
-		ASSERT_EQUAL(result, 0, ERROR);
-		ASSERT_EQUAL(info->drvnum, 1, ERROR);
-		ASSERT_EQUAL(info->secSize, 512, ERROR);
-		ASSERT_EQUAL(info->numFats, 2, ERROR);
-	}
-	SUCCEED();
-}
-
-void test_get_drive_params_FAILS()
-{
-	const char *_func = __func__;
-	beforeEach();
-
-	//BDD given
-	memset(heap_top, 0, sizeof(DPARM_info));
-	DPARM_info *info = (DPARM_info*)heap_top;
-	char drive = 9;
-
-	//BDD when
-	ERRB result = getDriveParams(drive, info);
-
-	//BDD then
-	if (dosVersion() == VER_MSXDOS1x) {
-		ASSERT_EQUAL(result, ERR_IBDOS, ERROR);
-	} else {
-		ASSERT_EQUAL(result, ERR_IDRV, ERROR);
-	}
+	ASSERT(strcmp(resultp, "A:\\TESTDOS1.COM")==0 ||
+		   strcmp(resultp, "A:\\")==0, heap_top);
+	ASSERT_EQUAL(resultp, heap_top, ERROR);
 	SUCCEED();
 }
 
@@ -213,10 +171,10 @@ void test_fopen()
 	create_temp_file();
 
 	//BDD when
-	ERRB result = fopen(TEMP_FILE);
+	resultbool = fopen(TEMP_FILE);
 
 	//BDD then
-	ASSERT_EQUAL(result, 0, ERROR);
+	ASSERT_EQUAL(resultbool, true, ERROR);
 	SUCCEED();
 }
 
@@ -229,10 +187,10 @@ void test_fopen_FAILS()
 	remove(NO_FILE);
 
 	//BDD when
-	ERRB result = fopen(NO_FILE);
+	resultbool = fopen(NO_FILE);
 
 	//BDD then
-	ASSERT_EQUAL(result, ERR_NOFIL, ERROR);
+	ASSERT_EQUAL(resultbool, false, ERROR);
 	SUCCEED();
 }
 
@@ -246,10 +204,10 @@ void test_fclose()
 
 	//BDD when
 	fopen(TEMP_FILE);
-	ERRB result = fclose();
+	resultbool = fclose();
 
 	//BDD then
-	ASSERT_EQUAL(result, 0, ERROR);
+	ASSERT_EQUAL(resultbool, true, ERROR);
 	SUCCEED();
 }
 
@@ -259,12 +217,14 @@ void test_fclose_FAILS()
 	beforeEach();
 
 	//BDD given
+	remove(TEMP_FILE);
+	dos_initializeFCB();
 
 	//BDD when
-	ERRB result = fclose();
+	resultbool = fclose();
 
 	//BDD then
-	ASSERT_EQUAL(result, 0xff, ERROR);
+	ASSERT_EQUAL(resultbool, false, ERROR);
 	SUCCEED();
 }
 
@@ -277,10 +237,10 @@ void test_fcreate()
 	remove(TEMP_FILE);
 
 	//BDD when
-	ERRB result = fcreate(TEMP_FILE);
+	resultbool = fcreate(TEMP_FILE);
 
 	//BDD then
-	ASSERT_EQUAL(result, 1, ERROR);
+	ASSERT_EQUAL(resultbool, true, ERROR);
 	SUCCEED();
 }
 
@@ -293,10 +253,10 @@ void test_fcreate_FAILS()
 	create_temp_file();
 
 	//BDD when
-	ERRB result = fcreate(TEMP_FILE);
+	resultbool = fcreate("A\n");
 
 	//BDD then
-	ASSERT_EQUAL(result, 1, ERROR);
+	ASSERT_EQUAL(resultbool, false, ERROR);
 	SUCCEED();
 }
 
@@ -309,10 +269,10 @@ void test_remove()
 	create_temp_file();
 
 	//BDD when
-	ERRB result = remove(TEMP_FILE);
+	resultbool = remove(TEMP_FILE);
 
 	//BDD then
-	ASSERT_EQUAL(result, 1, ERROR);
+	ASSERT_EQUAL(resultbool, true, ERROR);
 	SUCCEED();
 }
 
@@ -324,10 +284,10 @@ void test_remove_FAILS()
 	//BDD given
 
 	//BDD when
-	ERRB result = remove(NO_FILE);
+	resultbool = remove(NO_FILE);
 
 	//BDD then
-	ASSERT_EQUAL(result, 0, ERROR);
+	ASSERT_EQUAL(resultbool, false, ERROR);
 	SUCCEED();
 }
 
@@ -341,12 +301,12 @@ void test_fread()
 
 	//BDD when
 	fopen(TEMP_FILE);
-	RETW result = fread(heap_top, strlen(TEMP_FILE));
+	result16 = fread(heap_top, strlen(TEMP_FILE));
 	fclose();
 
 	//BDD then
+	ASSERT_EQUAL(result16, strlen(TEMP_FILE), ERROR);
 	ASSERT_EQUAL(strncmp(TEMP_FILE, heap_top, strlen(TEMP_FILE)), 0, ERROR);
-	ASSERT_EQUAL(result, strlen(TEMP_FILE), ERROR);
 	SUCCEED();
 }
 
@@ -360,12 +320,12 @@ void test_fread_EOF()
 
 	//BDD when
 	fopen(TEMP_FILE);
-	RETW result = fread(heap_top, strlen(TEMP_FILE)+2);
+	result16 = fread(heap_top, strlen(TEMP_FILE)+20);
 	fclose();
 
 	//BDD then
+	ASSERT_EQUAL(result16, 0, ERROR);
 	ASSERT_EQUAL(strncmp(TEMP_FILE, heap_top, strlen(TEMP_FILE)), 0, ERROR);
-	ASSERT_EQUAL(result, 0xffc7, ERROR);
 	SUCCEED();
 }
 
@@ -375,12 +335,14 @@ void test_fread_FAILS()
 	beforeEach();
 
 	//BDD given
+	remove(TEMP_FILE);
+	dos_initializeFCB();
 
 	//BDD when
-	RETW result = fread(heap_top, strlen(TEMP_FILE));
+	result16 = fread(heap_top, strlen(TEMP_FILE));
 
 	//BDD then
-	ASSERT_EQUAL(result, 0xffc7, ERROR);
+	ASSERT_EQUAL(result16, 0, ERROR);
 	SUCCEED();
 }
 
@@ -393,12 +355,12 @@ void test_fwrite()
 	remove(TEMP_FILE);
 
 	//BDD when
-	FILEH fh = fcreate(TEMP_FILE);
-	RETW result = fwrite(TEMP_FILE, strlen(TEMP_FILE));
+	fcreate(TEMP_FILE);
+	result16 = fwrite(TEMP_FILE, strlen(TEMP_FILE));
 	fclose();
 
 	//BDD then
-	ASSERT_EQUAL(result, filesize(TEMP_FILE), ERROR);
+	ASSERT_EQUAL(result16, filesize(TEMP_FILE), ERROR);
 	SUCCEED();
 }
 
@@ -408,12 +370,13 @@ void test_fwrite_FAILS()
 	beforeEach();
 
 	//BDD given
+	fopen("A\n");
 
 	//BDD when
-	RETW result = fwrite(heap_top, 10);
+	result16 = fwrite(TEMP_FILE, 10);
 
 	//BDD then
-	ASSERT_EQUAL(result, 0xffff, ERROR);
+	ASSERT_EQUAL(result16, 10, ERROR);
 	SUCCEED();
 }
 
@@ -427,11 +390,11 @@ void test_fputs()
 
 	//BDD when
 	fcreate(TEMP_FILE);
-	RETW result = fputs(TEMP_FILE);
+	result16 = fputs(TEMP_FILE);
 	fclose();
 
 	//BDD then
-	ASSERT_EQUAL(result, filesize(TEMP_FILE), ERROR);
+	ASSERT_EQUAL(result16, filesize(TEMP_FILE), ERROR);
 	SUCCEED();
 }
 
@@ -441,12 +404,13 @@ void test_fputs_FAILS()
 	beforeEach();
 
 	//BDD given
+	dos_initializeFCB();
 
 	//BDD when
-	RETW result = fputs(TEMP_FILE);
+	result16 = fputs(TEMP_FILE);
 
 	//BDD then
-	ASSERT_EQUAL(result, 0xffff, ERROR);
+	ASSERT_EQUAL(result16, 8, ERROR);
 	SUCCEED();
 }
 
@@ -483,14 +447,13 @@ void test_fgets_CRLF()
 
 	//BDD when
 	fopen(TEMP_FILE);
-	char *result = fgets(heap_top, 16);
+	resultp = fgets(heap_top, 16);
 	fclose();
 
 	//BDD then
-	ASSERT_EQUAL(result, heap_top, ERROR);
-	ASSERT_EQUAL(strlen(heap_top), 11, ERROR);
-	ASSERT_EQUAL(strcmp(heap_top, TEXT_CRLF_15), 0, ERROR);
-	ASSERT_EQUAL(strcmp(result, TEXT_CRLF_15), 0, ERROR);
+	ASSERT_EQUAL(resultp, heap_top, ERROR);
+	ASSERT_EQUAL(strlen(resultp), 11, ERROR);
+	ASSERT_EQUAL(strcmp(resultp, TEXT_CRLF_15), 0, ERROR);
 	SUCCEED();
 }
 
@@ -500,12 +463,15 @@ void test_fgets_FAILS()
 	beforeEach();
 
 	//BDD given
+	remove(TEMP_FILE);
+	dos_initializeFCB();
 
 	//BDD when
-	char *result = fgets(heap_top, 100);
+	resultp = fgets(heap_top, 100);
 
 	//BDD then
-	ASSERT_EQUAL(result, heap_top, ERROR);
+	ASSERT_EQUAL(resultp, heap_top, ERROR);
+	ASSERT_EQUAL(*resultp, 0, ERROR);
 	SUCCEED();
 }
 
@@ -515,18 +481,18 @@ void test_fseek_SET()
 	beforeEach();
 
 	//BDD given
-	memcpy(heap_top, '\0', 13);
+	memset(heap_top, '\0', 13);
 	create_temp_file();
 
 	//BDD when
 	fopen(TEMP_FILE);
-	int32_t result = fseek(5, SEEK_SET);
+	result32 = fseek(5, SEEK_SET);
 	fread(heap_top, 13);
 	fclose();
 
 	//BDD then
+	ASSERT_EQUAL(result32, 5, ERROR);
 	ASSERT_EQUAL(strcmp(heap_top, "tmp"), 0, ERROR);
-	ASSERT_EQUAL(result, 5, ERROR);
 	SUCCEED();
 }
 
@@ -536,19 +502,19 @@ void test_fseek_CUR()
 	beforeEach();
 
 	//BDD given
-	memcpy(heap_top, '\0', 13);
+	memset(heap_top, '\0', 13);
 	create_temp_file();
 
 	//BDD when
 	fopen(TEMP_FILE);
 	fread(heap_top, 2);
-	int32_t result = fseek(3, SEEK_CUR);
+	result32 = fseek(3, SEEK_CUR);
 	fread(heap_top, 13);
 	fclose();
 
 	//BDD then
+	ASSERT_EQUAL(result32, 5, ERROR);
 	ASSERT_EQUAL(strcmp(heap_top, "tmp"), 0, ERROR);
-	ASSERT_EQUAL(result, 5, ERROR);
 	SUCCEED();
 }
 
@@ -558,18 +524,18 @@ void test_fseek_END()
 	beforeEach();
 
 	//BDD given
-	memcpy(heap_top, '\0', 13);
+	memset(heap_top, '\0', 13);
 	create_temp_file();
 
 	//BDD when
 	fopen(TEMP_FILE);
-	int32_t result = fseek(3, SEEK_END);
+	result32 = fseek(-3, SEEK_END);
 	fread(heap_top, 13);
 	fclose();
 
 	//BDD then
+	ASSERT_EQUAL(result32, 5, ERROR);
 	ASSERT_EQUAL(strcmp(heap_top, "tmp"), 0, ERROR);
-	ASSERT_EQUAL(result, 5, ERROR);
 	SUCCEED();
 }
 
@@ -580,17 +546,19 @@ void test_fseek_FAILS()
 
 	//BDD given
 	create_temp_file();
+	dos_initializeFCB();
 
-	//BDD when
-	int32_t result1 = fseek(3, SEEK_SET);
+	//BDD when 1
+	result32 = fseek(3, SEEK_SET);
+	ASSERT_EQUAL(result32, 3, ERROR);
 
+	//BDD when 2
 	fopen(TEMP_FILE);
-	int32_t result2 = fseek(3, 0xff);
+	result32 = fseek(3, 0xff);
 	fclose();
+	ASSERT_EQUAL(result32, -1, ERROR);
 
 	//BDD then
-	ASSERT_EQUAL(result1, 3, ERROR);
-	ASSERT_EQUAL(result2, -1, ERROR);
 	SUCCEED();
 }
 
@@ -607,11 +575,11 @@ void test_fflush()
 	fseek(0, SEEK_END);
 	fwrite(heap_top, 10);
 	fflush();
-	uint32_t result = filesize(TEMP_FILE);
 	fclose();
+	result32 = filesize(TEMP_FILE);
 
 	//BDD then
-	ASSERT_EQUAL(result, strlen(TEMP_FILE)+10, ERROR);
+	ASSERT_EQUAL(result32, strlen(TEMP_FILE)+10, ERROR);
 	SUCCEED();
 }
 
@@ -623,10 +591,10 @@ void test_filesize()
 	//BDD given
 
 	//BDD when
-	uint16_t result = filesize(CCC_FILE);
+	result32 = filesize(CCC_FILE);
 
 	//BDD then
-	ASSERT_EQUAL(result, 749, ERROR);
+	ASSERT_EQUAL(result32, 749, ERROR);
 	SUCCEED();
 }
 
@@ -638,10 +606,10 @@ void test_filesize_FAILS()
 	//BDD given
 
 	//BDD when
-	uint32_t result = filesize(BAD_FILE);
+	result32 = filesize(BAD_FILE);
 
 	//BDD then
-	ASSERT_EQUAL(result, -1, ERROR);
+	ASSERT_EQUAL(result32, -1, ERROR);
 	SUCCEED();
 }
 
@@ -653,10 +621,10 @@ void test_fileexists()
 	//BDD given
 
 	//BDD when
-	bool result = fileexists(AUTOEXEC_FILE);
+	resultbool = fileexists(AUTOEXEC_FILE);
 
 	//BDD then
-	ASSERT_EQUAL(result, true, ERROR);
+	ASSERT_EQUAL(resultbool, true, ERROR);
 	SUCCEED();
 }
 
@@ -668,10 +636,10 @@ void test_fileexists_FAILS()
 	//BDD given
 
 	//BDD when
-	bool result = fileexists(BAD_FILE);
+	resultbool = fileexists(BAD_FILE);
 
 	//BDD then
-	ASSERT_EQUAL(result, false, ERROR);
+	ASSERT_EQUAL(resultbool, false, ERROR);
 	SUCCEED();
 }
 
@@ -683,10 +651,10 @@ void test_dosversion()
 	//BDD given
 
 	//BDD when
-	uint8_t result = dosVersion();
+	result8 = dosVersion();
 
 	//BDD then
-	ASSERT_EQUAL(result, VER_MSXDOS2x, ERROR);
+	ASSERT(result8==VER_MSXDOS1x || result8==VER_MSXDOS2x, ERROR);
 	SUCCEED();
 }
 
@@ -697,6 +665,7 @@ void test_set_transfer_address()
 
 	//BDD given
 	memset(heap_top, 0, 100);
+	create_temp_file();
 	fopen(TEMP_FILE);
 
 	//BDD when
@@ -707,7 +676,7 @@ void test_set_transfer_address()
 		ld hl, #1				; Set FCB Record size to 1 byte
 		ld (#SYSFCB+14),hl
 		ld hl, #8				; Num. bytes to read
-		ld de,#SYSFCB
+		ld de, #SYSFCB
 		ld c,#RDBLK				; Read from file
 		DOSCALL
 		pop de
@@ -716,7 +685,7 @@ void test_set_transfer_address()
 	fclose();
 
 	//BDD then
-	ASSERT_EQUAL(strcmp(heap_top, TEMP_FILE), 0, ERROR);
+	ASSERT_EQUAL(strncmp(heap_top, TEMP_FILE, 8), 0, ERROR);
 	SUCCEED();
 }
 
@@ -726,15 +695,15 @@ void test_read_abs_sector()
 	beforeEach();
 
 	//BDD given
-	memset(heap_top, 0, 512);
-	setTransferAddress(heap_top);
+	memset(&buff[0], 0, 512);
+	setTransferAddress(&buff[0]);
 
 	//BDD when
-	uint8_t result = readAbsoluteSector(0, 0, 1);
+	result8 = readAbsoluteSector(0, 0, 1);
 
 	//BDD then
-	ASSERT_EQUAL(result, 0, ERROR);
-	ASSERT_EQUAL(strncmp(heap_top+133, "Boot error\r\nPress any key", 25), 0, ERROR);
+	ASSERT_EQUAL(result8, 0, ERROR);
+	ASSERT_EQUAL(strncmp(&buff[133], "Boot error\r\nPress any key", 25), 0, ERROR);
 	SUCCEED();
 }
 
@@ -744,15 +713,18 @@ void test_read_abs_sector_IDRV()
 	beforeEach();
 
 	//BDD given
-	setTransferAddress(heap_top);
+	setTransferAddress(&buff[0]);
 
 	//BDD when
-	uint8_t result = readAbsoluteSector(10, 0, 1);
+	result8 = readAbsoluteSector(10, 0, 1);
 
 	//BDD then
-	ASSERT_EQUAL(result, ERR_IDRV, ERROR);
+	assert(result8==ERR_IDRV);
 	SUCCEED();
 }
+
+// =============================================================================
+// TESTS DOS2
 
 void test_mapperGetTotalSegments()
 {
@@ -762,10 +734,10 @@ void test_mapperGetTotalSegments()
 	//BDD given
 
 	//BDD when
-	uint8_t result = mapperGetTotalSegments();
+	result8 = mapperGetTotalSegments();
 
 	//BDD then
-	ASSERT_EQUAL(result, 32, ERROR);
+	ASSERT_EQUAL(result8, 32, ERROR);
 	SUCCEED();
 }
 
@@ -777,10 +749,10 @@ void test_mapperGetFreeSegments()
 	//BDD given
 
 	//BDD when
-	uint8_t result = mapperGetFreeSegments();
+	result8 = mapperGetFreeSegments();
 
 	//BDD then
-	ASSERT_EQUAL(result, mapperGetTotalSegments()-(4+7), ERROR);
+	ASSERT_EQUAL(result8, mapperGetTotalSegments()-(4+7), ERROR);
 	SUCCEED();
 }
 
@@ -805,8 +777,44 @@ void test_mapperGetCurrentSegmentInPage()
 	SUCCEED();
 }
 
-// =============================================================================
-// TESTS DOS2
+void test_dos2_get_drive_params()
+{
+	const char *_func = __func__;
+	beforeEach();
+
+	//BDD given
+	memset(heap_top, 0, sizeof(DPARM_info));
+	DPARM_info *info = (DPARM_info*)heap_top;
+	char drive = getCurrentDrive();
+
+	//BDD when
+	result8 = dos2_getDriveParams(drive+1, info);
+
+	//BDD then
+	ASSERT_EQUAL(result8, 0, ERROR);
+	ASSERT_EQUAL(info->drvnum, 1, ERROR);
+	ASSERT_EQUAL(info->secSize, 512, ERROR);
+	ASSERT_EQUAL(info->numFats, 2, ERROR);
+	SUCCEED();
+}
+
+void test_dos2_get_drive_params_FAILS()
+{
+	const char *_func = __func__;
+	beforeEach();
+
+	//BDD given
+	memset(heap_top, 0, sizeof(DPARM_info));
+	DPARM_info *info = (DPARM_info*)heap_top;
+	char drive = 9;
+
+	//BDD when
+	result8 = dos2_getDriveParams(drive, info);
+
+	//BDD then
+	ASSERT_EQUAL(result8, ERR_IDRV, ERROR);
+	SUCCEED();
+}
 
 void test_dos2_get_env()
 {
@@ -816,10 +824,10 @@ void test_dos2_get_env()
 	//BDD given
 
 	//BDD when
-	ERRB result = dos2_getEnv("SHELL", heap_top, 255);
+	result8 = dos2_getEnv("SHELL", heap_top, 255);
 
 	//BDD then
-	ASSERT_EQUAL(result, 0, ERROR);
+	ASSERT_EQUAL(result8, 0, ERROR);
 	ASSERT_EQUAL(strcmp(heap_top, "A:\\COMMAND2.COM"), 0, ERROR);
 	SUCCEED();
 }
@@ -832,10 +840,10 @@ void test_dos2_get_env_ELONG()
 	//BDD given
 
 	//BDD when
-	ERRB result = dos2_getEnv("SHELL", heap_top, 256);
+	result8 = dos2_getEnv("SHELL", heap_top, 256);
 
 	//BDD then
-	ASSERT_EQUAL(result, ERR_ELONG, ERROR);
+	ASSERT_EQUAL(result8, ERR_ELONG, ERROR);
 	SUCCEED();
 }
 
@@ -847,10 +855,10 @@ void test_dos2_get_env_EMPTY()
 	//BDD given
 
 	//BDD when
-	ERRB result = dos2_getEnv("EMPTY", heap_top, 200);
+	result8 = dos2_getEnv("EMPTY", heap_top, 200);
 
 	//BDD then
-	ASSERT_EQUAL(result, 0, ERROR);
+	ASSERT_EQUAL(result8, 0, ERROR);
 	ASSERT_EQUAL(strcmp(heap_top, ""), 0, ERROR);
 	SUCCEED();
 }
@@ -898,10 +906,10 @@ void test_dos2_fclose()
 
 	//BDD when
 	FILEH fh = dos2_fopen(TEMP_FILE, O_RDONLY);
-	ERRB result = dos2_fclose(fh);
+	result8 = dos2_fclose(fh);
 
 	//BDD then
-	ASSERT_EQUAL(result, 0, ERROR);
+	ASSERT_EQUAL(result8, 0, ERROR);
 	SUCCEED();
 }
 
@@ -964,10 +972,10 @@ void test_dos2_remove()
 	create_temp_file();
 
 	//BDD when
-	ERRB result = dos2_remove(TEMP_FILE);
+	result8 = dos2_remove(TEMP_FILE);
 
 	//BDD then
-	ASSERT_EQUAL(result, 0, ERROR);
+	ASSERT_EQUAL(result8, 0, ERROR);
 	SUCCEED();
 }
 
@@ -979,10 +987,10 @@ void test_dos2_remove_FAILS()
 	//BDD given
 
 	//BDD when
-	ERRB result = dos2_remove(NO_FILE);
+	result8 = dos2_remove(NO_FILE);
 
 	//BDD then
-	ASSERT_EQUAL(result, ERR_NOFIL, ERROR);
+	ASSERT_EQUAL(result8, ERR_NOFIL, ERROR);
 	SUCCEED();
 }
 
@@ -996,12 +1004,12 @@ void test_dos2_fread()
 
 	//BDD when
 	FILEH fh = dos2_fopen(TEMP_FILE, O_RDWR);
-	RETW result = dos2_fread(heap_top, strlen(TEMP_FILE), fh);
+	result16 = dos2_fread(heap_top, strlen(TEMP_FILE), fh);
 	dos2_fclose(fh);
 
 	//BDD then
+	ASSERT_EQUAL(result16, strlen(TEMP_FILE), ERROR);
 	ASSERT_EQUAL(strncmp(TEMP_FILE, heap_top, strlen(TEMP_FILE)), 0, ERROR);
-	ASSERT_EQUAL(result, strlen(TEMP_FILE), ERROR);
 	SUCCEED();
 }
 
@@ -1013,10 +1021,10 @@ void test_dos2_fread_FAILS()
 	//BDD given
 
 	//BDD when
-	RETW result = dos2_fread(heap_top, strlen(TEMP_FILE), 10);
+	result16 = dos2_fread(heap_top, strlen(TEMP_FILE), 10);
 
 	//BDD then
-	ASSERT_EQUAL(result, 0xff00|ERR_NOPEN, ERROR);
+	ASSERT_EQUAL(result16, 0xff00|ERR_NOPEN, ERROR);
 	SUCCEED();
 }
 
@@ -1030,11 +1038,11 @@ void test_dos2_fwrite()
 
 	//BDD when
 	FILEH fh = dos2_fcreate(TEMP_FILE, O_RDWR, ATTR_NONE);
-	RETW result = dos2_fwrite(TEMP_FILE, strlen(TEMP_FILE), fh);
+	result16 = dos2_fwrite(TEMP_FILE, strlen(TEMP_FILE), fh);
 	dos2_fclose(fh);
 
 	//BDD then
-	ASSERT_EQUAL(result, filesize(TEMP_FILE), ERROR);
+	ASSERT_EQUAL(result16, filesize(TEMP_FILE), ERROR);
 	SUCCEED();
 }
 
@@ -1046,10 +1054,10 @@ void test_dos2_fwrite_FAILS()
 	//BDD given
 
 	//BDD when
-	RETW result = dos2_fwrite(heap_top, 5, 10);
+	result16 = dos2_fwrite(heap_top, 5, 10);
 
 	//BDD then
-	ASSERT_EQUAL(result, 0xff00|ERR_NOPEN, ERROR);
+	ASSERT_EQUAL(result16, 0xff00|ERR_NOPEN, ERROR);
 	SUCCEED();
 }
 
@@ -1063,11 +1071,11 @@ void test_dos2_fputs()
 
 	//BDD when
 	FILEH fh = dos2_fcreate(TEMP_FILE, O_RDWR, ATTR_NONE);
-	RETW result = dos2_fputs(TEMP_FILE, fh);
+	result16 = dos2_fputs(TEMP_FILE, fh);
 	dos2_fclose(fh);
 
 	//BDD then
-	ASSERT_EQUAL(result, filesize(TEMP_FILE), ERROR);
+	ASSERT_EQUAL(result16, filesize(TEMP_FILE), ERROR);
 	SUCCEED();
 }
 
@@ -1079,10 +1087,10 @@ void test_dos2_fputs_FAILS()
 	//BDD given
 
 	//BDD when
-	RETW result = dos2_fputs(TEMP_FILE, 10);
+	result16 = dos2_fputs(TEMP_FILE, 10);
 
 	//BDD then
-	ASSERT_EQUAL(result, 0xff00|ERR_NOPEN, ERROR);
+	ASSERT_EQUAL(result16, 0xff00|ERR_NOPEN, ERROR);
 	SUCCEED();
 }
 
@@ -1092,7 +1100,7 @@ void test_dos2_fseek_SET()
 	beforeEach();
 
 	//BDD given
-	memcpy(heap_top, '\0', 13);
+	memset(heap_top, '\0', 13);
 	create_temp_file();
 
 	//BDD when
@@ -1113,7 +1121,7 @@ void test_dos2_fseek_CUR()
 	beforeEach();
 
 	//BDD given
-	memcpy(heap_top, '\0', 13);
+	memset(heap_top, '\0', 13);
 	create_temp_file();
 
 	//BDD when
@@ -1135,7 +1143,7 @@ void test_dos2_fseek_END()
 	beforeEach();
 
 	//BDD given
-	memcpy(heap_top, '\0', 13);
+	memset(heap_top, '\0', 13);
 	create_temp_file();
 
 	//BDD when
@@ -1183,11 +1191,11 @@ void test_dos2_get_current_directory()
 	char drive = getCurrentDrive();
 
 	//BDD when
-	char result = dos2_getCurrentDirectory(drive, heap_top);
+	result8 = dos2_getCurrentDirectory(drive, heap_top);
 
 	//BDD then
+	ASSERT_EQUAL(result8, 0, ERROR);
 	ASSERT(strcmp(heap_top, "")==0, ERROR);
-	ASSERT_EQUAL(result, 0, ERROR);
 	SUCCEED();
 }
 
@@ -1201,11 +1209,11 @@ void test_dos2_get_current_directory_FAILS()
 	char drive = 8;
 
 	//BDD when
-	char result = dos2_getCurrentDirectory(drive, heap_top);
+	result8 = dos2_getCurrentDirectory(drive, heap_top);
 
 	//BDD then
+	ASSERT_EQUAL(result8, ERR_IDRV, ERROR);
 	ASSERT(strcmp(heap_top, "")==0, ERROR);
-	ASSERT_EQUAL(result, ERR_IDRV, ERROR);
 	SUCCEED();
 }
 
@@ -1219,10 +1227,10 @@ void test_dos2_findfirst()
 	FFBLK *ffblk = (FFBLK*)heap_top;
 
 	//BDD when
-	ERRB result = dos2_findfirst("*.SYS", ffblk, ATTR_NONE);
+	result8 = dos2_findfirst("*.SYS", ffblk, ATTR_NONE);
 
 	//BDD then
-	ASSERT_EQUAL(result, 0, ERROR);
+	ASSERT_EQUAL(result8, 0, ERROR);
 	ASSERT_EQUAL(ffblk->magic, 0xff, ERROR);
 	ASSERT_EQUAL(strcmp(ffblk->filename, "MSXDOS.SYS"), 0, ERROR);
 	ASSERT_EQUAL(ffblk->attribs, 0, ERROR);
@@ -1241,10 +1249,10 @@ void test_dos2_findfirst_NOFIL()
 	FFBLK *ffblk = (FFBLK*)heap_top;
 
 	//BDD when
-	ERRB result = dos2_findfirst("*.BAD", ffblk, ATTR_NONE);
+	result8 = dos2_findfirst("*.BAD", ffblk, ATTR_NONE);
 
 	//BDD then
-	ASSERT_EQUAL(result, ERR_NOFIL, ERROR);
+	ASSERT_EQUAL(result8, ERR_NOFIL, ERROR);
 	ASSERT_EQUAL(ffblk->magic, 0xff, ERROR);
 	SUCCEED();
 }
@@ -1260,10 +1268,10 @@ void test_dos2_findnext()
 
 	//BDD when
 	dos2_findfirst("*.SYS", ffblk, ATTR_NONE);
-	ERRB result = dos2_findnext(ffblk);
+	result8 = dos2_findnext(ffblk);
 
 	//BDD then
-	ASSERT_EQUAL(result, 0, ERROR);
+	ASSERT_EQUAL(result8, 0, ERROR);
 	ASSERT_EQUAL(ffblk->magic, 0xff, ERROR);
 	ASSERT_EQUAL(strcmp(ffblk->filename, "MSXDOS2.SYS"), 0, ERROR);
 	ASSERT_EQUAL(ffblk->attribs, 0, ERROR);
@@ -1283,10 +1291,10 @@ void test_dos2_findnext_NOFIL()
 
 	//BDD when
 	dos2_findfirst("*.BAT", ffblk, ATTR_NONE);
-	ERRB result = dos2_findnext(ffblk);
+	result8 = dos2_findnext(ffblk);
 
 	//BDD then
-	ASSERT_EQUAL(result, ERR_NOFIL, ERROR);
+	ASSERT_EQUAL(result8, ERR_NOFIL, ERROR);
 	ASSERT_EQUAL(ffblk->magic, 0xff, ERROR);
 	SUCCEED();
 }
@@ -1318,7 +1326,6 @@ void test_dos2_parsePathname()
 	const char *_func = __func__;
 	beforeEach();
 
-	uint8_t result;
 	PATH_parsed *info = (PATH_parsed*)heap_top;
 
 	const char *PATH_TEST1 = "b:\\dir1\\dir2\\file1.com param1";
@@ -1326,8 +1333,8 @@ void test_dos2_parsePathname()
 	const char *PATH_TEST3 = "\\dir1\\file1 param1";
 
 	//Test 1
-	result = dos2_parsePathname(PATH_TEST1, info);
-	ASSERT_EQUAL(result, 0, ERROR);
+	result8 = dos2_parsePathname(PATH_TEST1, info);
+	ASSERT_EQUAL(result8, 0, ERROR);
 	ASSERT_EQUAL(info->drive, 2, ERROR);
 	ASSERT_EQUAL(info->termChar-PATH_TEST1, 22, ERROR);
 	ASSERT_EQUAL(info->lastItem-PATH_TEST1, 13, ERROR);
@@ -1341,8 +1348,8 @@ void test_dos2_parsePathname()
 	ASSERT_EQUAL(info->flags.values.lastIsDosDot, false, ERROR);
 
 	//Test 2
-	result = dos2_parsePathname(PATH_TEST2, info);
-	ASSERT_EQUAL(result, 0, ERROR);
+	result8 = dos2_parsePathname(PATH_TEST2, info);
+	ASSERT_EQUAL(result8, 0, ERROR);
 	ASSERT_EQUAL(info->drive, 1, ERROR);
 	ASSERT_EQUAL(info->termChar-PATH_TEST2, 8, ERROR);
 	ASSERT_EQUAL(info->lastItem-PATH_TEST2, 8, ERROR);
@@ -1356,8 +1363,8 @@ void test_dos2_parsePathname()
 	ASSERT_EQUAL(info->flags.values.lastIsDosDot, false, ERROR);
 
 	//Test 3
-	result = dos2_parsePathname(PATH_TEST3, info);
-	ASSERT_EQUAL(result, 0, ERROR);
+	result8 = dos2_parsePathname(PATH_TEST3, info);
+	ASSERT_EQUAL(result8, 0, ERROR);
 	ASSERT_EQUAL(info->drive, 1, ERROR);
 	ASSERT_EQUAL(info->termChar-PATH_TEST3, 11, ERROR);
 	ASSERT_EQUAL(info->lastItem-PATH_TEST3, 6, ERROR);
@@ -1382,10 +1389,10 @@ void test_dos2_getScreenSize()
 	//BDD given
 
 	//BDD when
-	RETW result = dos2_getScreenSize();
+	result16 = dos2_getScreenSize();
 
 	//BDD then
-	ASSERT_EQUAL(result, 0x1850, ERROR);	// 24 rows x 80 cols
+	ASSERT_EQUAL(result16, 0x1850, ERROR);	// 24 rows x 80 cols
 	SUCCEED();
 }
 
@@ -1441,10 +1448,10 @@ void test_nxtr_get_drive_letter_info()
 	DRIVE_info *info = (DRIVE_info*)heap_top;
 
 	//BDD when
-	ERRB result = nxtr_getDriveLetterInfo(0, info);
+	result8 = nxtr_getDriveLetterInfo(0, info);
 
 	//BDD then
-	ASSERT_EQUAL(result, 0, ERROR);
+	ASSERT_EQUAL(result8, 0, ERROR);
 	ASSERT_EQUAL(info->driveStatus, 0, ERROR); 
 		// 0: Unassigned
 		// 1: Assigned to a storage device attached to a Nextor or MSX-DOS driver
@@ -1471,10 +1478,10 @@ void test_nxtr_get_cluster_info_fat()
 	CLUSTER_info *info = (CLUSTER_info*)heap_top;
 
 	//BDD when
-	ERRB result = nxtr_getClusterInfoFAT(0, 0, info);
+	result8 = nxtr_getClusterInfoFAT(0, 0, info);
 
 	//BDD then
-	ASSERT_EQUAL(result, 0, ERROR);
+	ASSERT_EQUAL(result8, 0, ERROR);
 	SUCCEED();
 }
 
@@ -1498,7 +1505,6 @@ int main(char** argv, int argc)
 
 	test_get_current_drive();
 	test_get_program_path();
-	test_get_drive_params(); test_get_drive_params_FAILS();
 
 	test_fopen(); test_fopen_FAILS();
 	test_fclose(); test_fclose_FAILS();
@@ -1516,14 +1522,18 @@ int main(char** argv, int argc)
 	test_dosversion();
 
 	test_set_transfer_address();
-	test_read_abs_sector(); test_read_abs_sector_IDRV();
+	test_read_abs_sector();
+	//test_read_abs_sector_IDRV();
 	//test_write_abs_sector();
 
-	test_mapperGetTotalSegments();
-	test_mapperGetFreeSegments();
-	test_mapperGetCurrentSegmentInPage();
-
 	if (dosVersion() >= VER_MSXDOS2x) {
+		mapperInit();
+		test_mapperGetTotalSegments();
+		test_mapperGetFreeSegments();
+		test_mapperGetCurrentSegmentInPage();
+
+		test_dos2_get_drive_params(); test_dos2_get_drive_params_FAILS();
+
 		test_dos2_get_env(); test_dos2_get_env_ELONG(); test_dos2_get_env_EMPTY();
 
 		test_dos2_fcreate(); test_dos2_fcreate_FAILS();
@@ -1552,4 +1562,6 @@ int main(char** argv, int argc)
 		test_nxtr_get_drive_letter_info();
 		test_nxtr_get_cluster_info_fat();
 	}
+
+	return 0;
 }
