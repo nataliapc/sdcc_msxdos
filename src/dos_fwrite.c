@@ -41,6 +41,7 @@ size and disk space will be allocated or freed as required. Additional disk
 space allocated in this way will not be initialized to any particular value.
 */
 	__asm
+		push ix
 		ex de,hl			; DE = Param buf
 		push hl				; HL = Param size
 
@@ -57,6 +58,7 @@ space allocated in this way will not be initialized to any particular value.
 		DOSCALL
 
 		pop de				; Returns DE
+		pop ix
 		or a
 		ret z				; no error = number of bytes writed
 		ld de, #0

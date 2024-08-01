@@ -15,9 +15,12 @@ character checks will be done. This function is not compatible with CP/M
 which uses this function number for "set I/O byte".
 */
 	__asm
+		push ix
+
 		ld c,#INNOE
 		DOSCALL
 
+		pop ix
 		ld d, #0x00		; Returns DE
 		ld e, l
 		ret

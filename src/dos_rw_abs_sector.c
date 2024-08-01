@@ -13,10 +13,10 @@ static ERRB _abs_sector(uint8_t drive, uint16_t startsec, uint8_t nsec, uint8_t 
 		ld d,2(ix)
 		ld h,3(ix)		; H  = Param nsec
 		ld c,4(ix)		; C  = Param doscall
-		pop ix
 
 		DOSCALL
 
+		pop ix
 		ld l,a			; Returns L
 		ret
 	__endasm;

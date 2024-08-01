@@ -30,9 +30,12 @@ except that of it is "Ctrl-C" then the program will be terminated. These same
 input checks are also done for functions 01h, 02h, 08h, 09h and 0Ah.
 */
 	__asm
+		push ix
+
 		ld c,#CONST
 		DOSCALL
 		
+		pop ix
 		and #1			; Returns A
 		ret
 	__endasm;

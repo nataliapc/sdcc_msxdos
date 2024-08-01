@@ -11,7 +11,12 @@ RETB getCurrentDrive(void) __naked __sdcccall(1)
     This function just returns the current drive number.
 */
 	__asm
+		push ix
+		
 		ld c,#CURDRV
-		DOSJP
+		DOSCALL
+
+		pop ix
+		ret
 	__endasm;
 }

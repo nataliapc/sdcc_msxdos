@@ -30,6 +30,7 @@ the users DTA. The random record field is adjusted to the first record not
 read, ie. the value returned in HL is added on to it.
 */
 	__asm
+		push ix
 		ex de,hl			; DE = Param buf
 		push hl				; HL = Param size
 
@@ -44,6 +45,7 @@ read, ie. the value returned in HL is added on to it.
 		ld c,#RDBLK
 		DOSCALL
 
+		pop ix
 		ex de,hl			; Returns DE
 		or a
 		ret z				; no error = number of bytes read

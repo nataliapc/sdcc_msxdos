@@ -18,6 +18,7 @@ are successfully deleted then this function returns with A=0. A return with
 A=FFh indicates that no files were deleted.
 */
 	__asm
+		push ix
 		push hl			; HL = Param filename
 
 		call dos_initializeFCB
@@ -29,6 +30,7 @@ A=FFh indicates that no files were deleted.
 		ld c,#FDEL
 		DOSCALL
 
+		pop ix
 		inc a			; error = 0 | no error = 1
 		ret				; Returns A
 	__endasm;

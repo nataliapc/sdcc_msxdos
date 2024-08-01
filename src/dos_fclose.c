@@ -18,10 +18,12 @@ bool fclose(void) __naked __sdcccall(1)
     an "ensure" function.
 */
 	__asm
+		push ix
 		ld de,#SYSFCB		; DE = Pointer to opened FCB
 		ld c,#FCLOSE
 		DOSCALL
 
+		pop ix
 		inc a				; error = 0 | no error = 1
 		ret					; Returns A
 	__endasm;

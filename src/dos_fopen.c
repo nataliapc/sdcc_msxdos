@@ -49,6 +49,7 @@ which the file was found to ensure correct accessing of the file if the
 original drive byte was zero (default).
 */
 	__asm
+		push ix
 		push hl						; HL = Param filename
 
 		call dos_initializeFCB
@@ -60,6 +61,7 @@ original drive byte was zero (default).
 		ld c,#FOPEN					; Call FOPEN Bios function
 		DOSCALL
 
+		pop ix
 		inc a						; error = 0 | no error = 1
 		ret							; Returns A
 	__endasm;
