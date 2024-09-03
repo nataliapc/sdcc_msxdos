@@ -1,3 +1,9 @@
+/*
+	Copyright (c) 2024 Natalia Pujol Cremades
+	info@abitwitches.com
+
+	See LICENSE file.
+*/
 #pragma once
 #include <stdint.h>
 #include <stdbool.h>
@@ -75,6 +81,7 @@ typedef uint8_t  FILEH;
 #define WRSEQ   0x15		// Sequential write FCB)		CPM MSX1
 #define FMAKE   0x16		// Create file (FCB)			CPM MSX1
 
+#define LOGIN   0x18		// Get login vector				CPM MSX1
 #define CURDRV  0x19		// Get current drive			CPM MSX1
 #define SETDTA  0x1A		// Set disk transfer address	CPM MSX1
 
@@ -215,6 +222,7 @@ typedef uint8_t  FILEH;
 #define ERR_IBDOS   0xdc	//Invalid MSX-DOS call: An MSX-DOS call was made with an illegal function number. Most illegal function calls return no error, but this error may be returned if a "get previous error code" function call is made.
 #define ERR_NORAM   0xde	//Not enough memory: MSX-DOS has run out of memory in its 16k kernel data segment. Try reducing the number of sector buffers or removing some environment strings. Also occurs if there are no free segments for creating the RAMdisk.
 #define ERR_INTER   0xdf	//Internal error: Should never occur.
+#define ERR_FIRST   ERR_ISBFN
 
 typedef struct {			// Off ID  Siz CP/M Function           MSXDOS Function
 	uint8_t  drvNum;		//  0 [DR] 1   Drive number containing the file (0:default drive, 1:A, 2:B, ..., 8:H)
@@ -359,6 +367,23 @@ typedef struct {			// Returned data by parse_pathname(...)
 } PATH_parsed;
 
 typedef struct {
+	union {
+		uint16_t raw;
+		struct {
+			unsigned driveA: 1;
+			unsigned driveB: 1;
+			unsigned driveC: 1;
+			unsigned driveD: 1;
+			unsigned driveE: 1;
+			unsigned driveF: 1;
+			unsigned driveG: 1;
+			unsigned driveH: 1;
+			unsigned unused: 8;
+		};
+	};
+} AvailableDrives_t;
+
+typedef struct {
 	uint8_t segment;		// RAM Extension segment
 	uint8_t slotAddress;	// F000SSPP
 } MAPPER_Segment;
@@ -380,6 +405,7 @@ typedef struct {
 // MSX-DOS 1.x
 RETB  getCurrentDrive(void) __sdcccall(1);
 char* getProgramPath(char *path);
+RETW  availableDrives() __sdcccall(0);
 
 bool  fopen(char *filename) __sdcccall(1);
 bool  fcreate(char *filename) __sdcccall(1);
