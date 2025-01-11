@@ -34,7 +34,7 @@ dos_copyFilenameToFCB::
     cp      #'.'
     jr      z,.open_dot
     or      a
-    jr      z,.open_cont
+    ret     z
     ld      (hl),a
     inc     hl
     inc     de
@@ -43,5 +43,3 @@ dos_copyFilenameToFCB::
     inc     de
     ld      hl,#SYSFCB+9
     jr      .open_loop
-.open_cont:
-	ret
