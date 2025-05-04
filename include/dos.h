@@ -112,6 +112,7 @@ typedef uint8_t  FILEH;
 #define DELETE  0x4D		// Delete file or subdirectory	         NEW
 
 #define GETCD   0x59		// Get current directory		         NEW
+#define CHDIR   0x5A		// Change current directory		         NEW
 #define PARSE   0x5B		// Parse pathname				         NEW
 #define PFILE   0x5C		// Parse filename				         NEW
 #define CHKCHR  0x5D		// Check character				         NEW
@@ -486,10 +487,13 @@ ERRB writeAbsoluteSector(uint8_t drive, uint16_t startsec, uint8_t nsec);
 // MSX-DOS 2.x
 ERRB dos2_getDriveParams(char drive, DPARM_info *param) __sdcccall(1);
 ERRB dos2_getCurrentDirectory(char drive, char *path) __sdcccall(1);
+ERRB dos2_setCurrentDirectory(char *path) __sdcccall(1);
 ERRB dos2_parsePathname(char* str, PATH_parsed *info) __sdcccall(1);
 char* dos2_filenameToDOS(char *sourceStr, char *target11) __sdcccall(1);
 char dos2_toupper(char c) __sdcccall(1);
 char* dos2_strupr(char *str);
+RETDW dos2_filesize(char *filename);
+bool dos2_fileexists(char *filename);
 
 FILEH dos2_fopen(char *filename, char mode) __sdcccall(0);
 FILEH dos2_fcreate(char *filename, char mode, char attributes) __sdcccall(0);
