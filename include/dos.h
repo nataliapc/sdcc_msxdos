@@ -142,77 +142,59 @@ typedef uint8_t  FILEH;
 #define GETCLUS 0x7E		// Get information for a cluster on a FAT drive
 
 /* MSX DOS versions from dosVersion() */
-enum DOS_VERSIONS {
-	VER_UNKNOWN     = 0,	// Unknown version
-	VER_MSXDOS1x    = 1,	// MSX-DOS 1.x
-	VER_MSXDOS2x    = 2,	// MSX-DOS 2.x
-	VER_NextorDOS   = 3,	// Nextor
-};
+#define VER_UNKNOWN     0	// Unknown version
+#define VER_MSXDOS1x    1	// MSX-DOS 1.x
+#define VER_MSXDOS2x    2	// MSX-DOS 2.x
+#define VER_NextorDOS   3	// Nextor
 
 /* Open/Create flags */
-enum OPEN_FLAGS {
-	O_RDWR     = 0x00,		// Read and write
-	O_RDONLY   = 0x01,		// Read only
-	O_WRONLY   = 0x02,		// Write only
-	O_INHERIT  = 0x04,		// Inheritable
-};
+#define O_RDWR       0x00	// Read and write
+#define O_RDONLY     0x01	// Read only
+#define O_WRONLY     0x02	// Write only
+#define O_INHERIT    0x04	// Inheritable
 
 /* File attributes */
-enum ATTRIB {
-	ATTR_NONE      = 0x00,	// None.
-	ATTR_READONLY  = 0x01,	// If set then the file cannot be written to or deleted, but can be read, renamed or moved.
-	ATTR_HIDDEN    = 0x02,	// If set then the file will only be found by the FFIRST function if ATTR_HIDDEN bit is set in attributes byte.
-	ATTR_SYSTEM    = 0x04,	// For MSX-DOS functions, this bit has exactly the same effect as ATTR_HIDDEN bit except that the FNEW and CREATE calls will not automatically delete a SYSTEM file.
-	ATTR_VOLUME    = 0x08,	// If set then this entry defines the name of the volume. Only occur in the root directory, and only once. Rest of bits are ignored.
-	ATTR_DIRECTORY = 0x10,	// The entry is a subdirectory and cannot be opened for reading and writing. Only the hidden bit has any meaning for sub-directories.
-	ATTR_ARCHIVE   = 0x20,	// Is set when a file was written to and closed. This bit can be examined by, for example, the XCOPY command to determine whether the file has been changed.
-	ATTR_RESERVED  = 0x40,	// Reserved (always 0).
-	ATTR_DEVICE    = 0x80,	// This is set to indicate that the FIB refers to a character device (eg. "CON") rather than a disk file. All of the other attributes bits are ignored.
-};
+#define ATTR_NONE       0x00	// None.
+#define ATTR_READONLY   0x01	// If set then the file cannot be written to or deleted, but can be read, renamed or moved.
+#define ATTR_HIDDEN     0x02	// If set then the file will only be found by the FFIRST function if ATTR_HIDDEN bit is set in attributes byte.
+#define ATTR_SYSTEM     0x04	// For MSX-DOS functions, this bit has exactly the same effect as ATTR_HIDDEN bit except that the FNEW and CREATE calls will not automatically delete a SYSTEM file.
+#define ATTR_VOLUME     0x08	// If set then this entry defines the name of the volume. Only occur in the root directory, and only once. Rest of bits are ignored.
+#define ATTR_DIRECTORY  0x10	// The entry is a subdirectory and cannot be opened for reading and writing. Only the hidden bit has any meaning for sub-directories.
+#define ATTR_ARCHIVE    0x20	// Is set when a file was written to and closed. This bit can be examined by, for example, the XCOPY command to determine whether the file has been changed.
+#define ATTR_RESERVED   0x40	// Reserved (always 0).
+#define ATTR_DEVICE     0x80	// This is set to indicate that the FIB refers to a character device (eg. "CON") rather than a disk file. All of the other attributes bits are ignored.
 
 /* Seek modes */
-enum SEEK_MODES {
-	SEEK_SET	= 0,		// Beginning of file
-	SEEK_CUR	= 1,		// Current position of the file pointer
-	SEEK_END	= 2,		// End of file
-};
+#define SEEK_SET        0		// Beginning of file
+#define SEEK_CUR        1		// Current position of the file pointer
+#define SEEK_END        2		// End of file
 
 /* DPARM.fsType filesystem types */
-enum FS_TYPES {
-	FS_FAT12		= 0x00,	// FAT12
-	FS_FAT16		= 0x01,	// FAT16
-	FS_UNKNOWN		= 0xff,	// Unknown
-};
+#define FS_FAT12		0x00	// FAT12
+#define FS_FAT16		0x01	// FAT16
+#define FS_UNKNOWN		0xff	// Unknown
 
 /* FOUT set_fast_out() constants */
-enum FASTOUT_VALUES {
-	FASTOUT_OFF   = 0x00,	// Disable fast output
-	FASTOUT_ON    = 0xff,	// Enable fast output
-};
+#define FASTOUT_OFF     0x00	// Disable fast output
+#define FASTOUT_ON      0xff	// Enable fast output
 
 /* IOCTL command codes */
-enum IOCTL_CMD {
-	IOCTL_FILESTATUS   = 0,	// Get file handle status
-	IOCTL_SETMODE      = 1,	// Get ASCII/binary mode
-	IOCTL_TESTINREADY  = 2,	// Test input ready
-	IOCTL_TESTOUTREADY = 3,	// Test output ready
-	IOCTL_GETSCRSIZE   = 4,	// Get screen size
-};
+#define IOCTL_FILESTATUS    0	// Get file handle status
+#define IOCTL_SETMODE       1	// Get ASCII/binary mode
+#define IOCTL_TESTINREADY   2	// Test input ready
+#define IOCTL_TESTOUTREADY  3	// Test output ready
+#define IOCTL_GETSCRSIZE    4	// Get screen size
 
 /* FEOF values */
-enum FEOF_VALUES {
-	NOFEOF    = 0,			// EOF not set
-	FEOF      = 1,			// EOF set
-};
+#define NOFEOF          0		// EOF not set
+#define FEOF            1		// EOF set
 
 /* GDLI Drive Status values */
-enum GDLI_DRVSTAT {
-	DRVSTAT_UNASSIGNED  = 0,	// Drive letter is not assigned to any driver
-	DRVSTAT_ASSIGNED    = 1,	// Drive letter is assigned to a driver
-	DRVSTAT_UNUSED      = 2,
-	DRVSTAT_FILEMOUNTED = 3,	// Drive letter is assigned to a driver and a file is mounted on it
-	DRVSTAT_RAMDISK     = 4,	// Drive letter is assigned to a driver and a RAM disk is mounted on it
-};
+#define DRVSTAT_UNASSIGNED   0	// Drive letter is not assigned to any driver
+#define DRVSTAT_ASSIGNED     1	// Drive letter is assigned to a driver
+#define DRVSTAT_UNUSED       2
+#define DRVSTAT_FILEMOUNTED  3	// Drive letter is assigned to a driver and a file is mounted on it
+#define DRVSTAT_RAMDISK      4	// Drive letter is assigned to a driver and a RAM disk is mounted on it
 
 /*
 	MSX-DOS Call Errors (Nextor)
