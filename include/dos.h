@@ -506,7 +506,7 @@ RETB  dosVersion(void) __sdcccall(1);
 void  exit(void);
 RETB  getCurrentDrive(void) __sdcccall(1);
 char* getProgramPath(char *path);
-RETW  availableDrives() __sdcccall(0);
+RETW  availableDrives(void) __sdcccall(0);
 void  getSystemDate(SYSTEMDATE_t *date) __sdcccall(1);
 void  getSystemTime(SYSTEMTIME_t *time) __sdcccall(1);
 
@@ -516,7 +516,7 @@ bool  fclose(void) __sdcccall(1);
 bool  remove(char *filename) __sdcccall(1);
 RETW  fread(char* buf, uint16_t size) __sdcccall(1);
 RETW  fwrite(char* buf, uint16_t size) __sdcccall(1);
-bool  fflush();
+bool  fflush(void);
 RETW  fputs(char* str);
 char* fgets(char* buf, uint16_t size);
 RETDW fseek(uint32_t offset, uint8_t origin);

@@ -1,7 +1,7 @@
 #include "dos.h"
 
 
-inline bool fflush()
+inline bool fflush(void)
 {
 	return fclose();
 }

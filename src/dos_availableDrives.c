@@ -1,7 +1,7 @@
 #include "dos.h"
 
 
-RETW availableDrives() __naked __sdcccall(0)
+RETW availableDrives(void) __naked __sdcccall(0)
 {
 /*
     GET LOGIN VECTOR (18H)
