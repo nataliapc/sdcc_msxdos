@@ -19,7 +19,7 @@ void  getSystemTime(SYSTEMTIME_t *time) __sdcccall(1)
 		push ix
 		push hl					; HL = Param time
 
-		ld   c, #GDATE
+		ld   c, #GTIME
 		DOSCALL
 
 		pop  ix
