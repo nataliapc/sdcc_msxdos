@@ -19,13 +19,13 @@ the fileinfo block is filled in with the information about the new matching
 entry.
 */
 	__asm
-		push ix			; preserve caller's IX (SDCC uses it as frame pointer)
+		push ix			; preserve callers IX (SDCC uses it as frame pointer)
 		push hl
 		pop ix			; IX = Param ffblk
 
 		ld c,#FNEXT
 		DOSCALL			; must CALL (not JP): we need to return to restore IX
-		pop ix			; restore caller's IX
+		pop ix			; restore callers IX
 		ret				; A = error code (sdcccall(1) returns in A; pop/ret keep A)
 	__endasm;
 }
