@@ -110,6 +110,9 @@ typedef uint8_t  FILEH;
 #define IOCTL   0x4B		// I/O control for devices		         NEW
 
 #define DELETE  0x4D		// Delete file or subdirectory	         NEW
+#define RENAME  0x4E		// Rename file or subdirectory	         NEW
+#define MOVE    0x4F		// Move file or subdirectory		         NEW
+#define ATTR    0x50		// Get/set file attributes		         NEW
 
 #define GETCD   0x59		// Get current directory		         NEW
 #define CHDIR   0x5A		// Change current directory		         NEW
@@ -546,8 +549,8 @@ FILEH dos2_fcreate(char *filename, char mode, char attributes) __sdcccall(0);
 FILEH dos2_fflush(FILEH fh) __sdcccall(1);
 ERRB  dos2_fclose(FILEH fh) __naked __sdcccall(1);
 ERRB  dos2_remove(char *filename) __sdcccall(1);
-//ERRB  dos2_rename(char *oldname, char *newname) __sdcccall(1);
-//ERRB  dos2_move(char *filename, char *newpath) __sdcccall(1);
+ERRB  dos2_rename(char *oldname, char *newname) __sdcccall(1);
+ERRB  dos2_move(char *filename, char *newpath) __sdcccall(1);
 RETW  dos2_fread(char* buf, uint16_t size, FILEH fh) __sdcccall(0);
 RETW  dos2_fwrite(char* buf, uint16_t size, FILEH fh) __sdcccall(0);
 RETW  dos2_fputs(char* str, FILEH fh);
@@ -558,8 +561,8 @@ RETDW dos2_ftell(FILEH fh);
 ERRB dos2_findfirst(const char *pathname, FFBLK *ffblk, uint8_t attrib) __sdcccall(0);
 ERRB dos2_findnext(FFBLK *ffblk ) __sdcccall(1);
 
-//RETB  dos2_setAttrib(char *filename, uint8_t attrib) __sdcccall(1);
-//RETB  dos2_getAttrib(char *filename) __sdcccall(1);
+RETW  dos2_setAttrib(char *filename, uint8_t attrib) __sdcccall(1);
+RETW  dos2_getAttrib(char *filename) __sdcccall(1);
 void dos2_setAbortRoutine(void *routine) __sdcccall(1);
 RETW dos2_getScreenSize(void) __sdcccall(1);
 ERRB dos2_getEnv(char* name, char* buffer, uint8_t buffer_size) __sdcccall(0);
