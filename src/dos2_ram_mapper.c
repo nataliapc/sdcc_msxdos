@@ -103,7 +103,8 @@ ERRB mapperAllocateSegment(MAPPER_Segment *returnedData) __naked __sdcccall(1)
 {
 	__asm
 							// HL = Param returnedData
-		ex de,hl			// store _returnedData in DE
+		push ix				// ALL_SEG may clobber IX; SDCC callers use it as frame pointer
+		push hl				// preserve returnedData; mapper BIOS may clobber registers
 
 		xor a				// A=0 to allocate user segment (A=1 to allocate system segment)
 		ld  b, a			// B=0 to allocate from primary mapper
@@ -120,14 +121,17 @@ ERRB mapperAllocateSegment(MAPPER_Segment *returnedData) __naked __sdcccall(1)
 		jr c, mapAll_error$	// error if carry
 
 		// add page/slot to _returnedData
-		ex de,hl			// recover _returnedData to HL
+		pop hl				// recover returnedData
 		ld (hl), a
 		inc hl
 		ld (hl), b
+		pop ix				// restore caller frame pointer
 		xor a				// Returns A = no error = $0
 		ret
 
 	mapAll_error$:
+		pop hl				// discard returnedData
+		pop ix				// restore caller frame pointer
 		// error no ram free
 		ld a, #ERR_NORAM	// Returns A = error = ERR_NORAM
 		ret
