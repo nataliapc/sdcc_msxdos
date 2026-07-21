@@ -33,12 +33,12 @@ Results:     A = Error code
 	__endasm;
 }
 
-inline ERRB setDriveLock(uint8_t drive, uint8_t value)
+inline ERRB nxtr_setDriveLock(uint8_t drive, uint8_t value)
 {
 	return _drive_lock(drive, 1, value);
 }
 
-inline ERRB getDriveLock(uint8_t drive)
+inline ERRB nxtr_getDriveLock(uint8_t drive)
 {
 	return _drive_lock(drive, 0, 0);
 }

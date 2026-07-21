@@ -67,8 +67,8 @@ You need **docker** to compile the library.
 	ERRB nxtr_getClusterInfoFAT(char drive, uint16_t clusterNumber, CLUSTER_info *info);
 	ERRB nxtr_readAbsoluteSectorDrv(uint8_t drive, uint32_t startsec, uint8_t nsec);
 	ERRB nxtr_writeAbsoluteSectorDrv(uint8_t drive, uint32_t startsec, uint8_t nsec);
-	ERRB nxtr_set_drive_lock(uint8_t drive, uint8_t value);
-	ERRB nxtr_get_drive_lock(uint8_t drive);
+	ERRB nxtr_setDriveLock(uint8_t drive, uint8_t value);
+	ERRB nxtr_getDriveLock(uint8_t drive);
 
 ### Memory mapper Functions (MSX-DOS 2.x)
 
